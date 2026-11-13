@@ -390,6 +390,12 @@ def test_deliver_matrix_tasks_to_no_exit_on_fail(monkeypatch, capsys):
     """tasks to 非 delivered 不退 1,失败面走 stdout 单条 print(冻结行为)。"""
     rec = _wire_deliver(monkeypatch, status="stalled")
     monkeypatch.setattr(tasks_mod, "hst_task_set", _Recorder())
+    # tasks 域偏移 mock 面界:to 臂的 spec.pre(tasks_mod._pre)函数内 from-import
+    # pane_cwd(读 addressing_mod 现值),须打 addressing_mod;_agents_of 是 tasks_mod
+    # 模块级绑定(打那里;hc 缺位机 CI 判例 2026-11-13,缺 mock 即 die engine_fail)
+    import prim.addressing as addressing_mod
+    monkeypatch.setattr(addressing_mod, "pane_cwd", lambda m, p: "/repo/x")
+    monkeypatch.setattr(tasks_mod, "_agents_of", lambda m: [{"hc_address": "t9", "agent": "claude", "pane_id": "t9"}])
     tasks_mod.VERBS["to"](["peer-claude-1", "评审后发版"], {})
     out = capsys.readouterr()
     assert "已设置" in out.out and "投递 stalled" in out.out
@@ -399,10 +405,12 @@ def test_deliver_matrix_tasks_to_no_exit_on_fail(monkeypatch, capsys):
 
 def test_deliver_matrix_tasks_set_bypasses_gate(monkeypatch, capsys):
     """D9:set 只写不扰,不走 run_to(引擎 mock 直测)。"""
+    # _set 内 resolve/pane_cwd 是函数内 from-import(读 addressing_mod 现值),打那里;
+    # _agents_of 是 tasks_mod 模块级绑定(打 addressing_mod 不生效;hc 缺位机 CI 判例 2026-11-13)
     import prim.addressing as addressing_mod
     monkeypatch.setattr(addressing_mod, "resolve", lambda i: ("local", "t9"))
     monkeypatch.setattr(addressing_mod, "pane_cwd", lambda m, p: "/repo/x")
-    monkeypatch.setattr(addressing_mod, "_agents_of", lambda m: [{"hc_address": "t9", "agent": "claude", "pane_id": "t9"}])
+    monkeypatch.setattr(tasks_mod, "_agents_of", lambda m: [{"hc_address": "t9", "agent": "claude", "pane_id": "t9"}])
     rec = _Recorder()
     monkeypatch.setattr(tasks_mod, "hst_task_set", rec)
     tasks_mod.VERBS["set"](["peer-claude-1", "评审后发版"], {})
