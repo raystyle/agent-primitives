@@ -1,0 +1,27 @@
+[project]
+name = "prim"
+version = "4.0.0"
+description = "原语 CLI(herdr-ccoe 批5a 迁移形):shares/streams/pipes/ports/ctxs/mcps 六域 + 共享叶子(uv python 跨系统形;ADR-0007 命名三分,复数对齐 2026-10-25 裁定,4.0 契约冻结重构 ADR-0008;agents/desks/tasks/machines 四入口随批5b 迁入)"
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
+
+[project.scripts]
+shares = "prim.cli:shares_main"
+streams = "prim.cli:streams_main"
+pipes = "prim.cli:pipes_main"
+ports = "prim.cli:ports_main"
+ctxs = "prim.cli:ctxs_main"
+mcps = "prim.cli:mcps_main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prim"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

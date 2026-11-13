@@ -1,0 +1,5 @@
+pipes@4.0.0 - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
+动词:view [host];open;close <addr|pid>;send <addr>(recipient:连管道发数据,stdin 直通);to <id> [--force](=open+模板知会,取用行 pipes send)
+示例:
+  pipes view node-a
+  pipes to node-a

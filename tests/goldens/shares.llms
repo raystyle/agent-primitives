@@ -1,0 +1,5 @@
+shares@4.0.0 - 文件域:S3 中转(引擎 s5;内容哈希键)
+动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
+示例:
+  shares put report.md
+  shares to node-a report.md --json

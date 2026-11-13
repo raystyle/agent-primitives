@@ -1,0 +1,13 @@
+mcps@4.0.0 - MCP 域:通用 MCP 客户端(第八原语,出站;引擎 mcp2cli)
+文法:mcps [全局旗标] <动词> [位置参数];裸调用 = view
+动词:view [目标](在册表+健康)/ tools <目标>(列 tools)/
+  call <目标> <tool> [--arg k=v]... [--arg-json k=<json>]...(调用;值字符串形透传)/
+  add <名> --url <URL> [--note <注>]/ remove <名>
+注册表:~/.config/mcps/targets.yaml(名->url;MCPS_REGISTRY env 覆盖)
+超时:--timeout <s> 覆盖;view/tools 默认 10s、call 120s,上限 600
+示例:
+  mcps view
+  mcps tools lab-node
+  mcps call lab-node shell --arg cmd=whoami --arg wait=true
+  mcps call lab-node spawn --arg-json 'argv=["notepad"]'
+  mcps add my-mcp --url http://192.0.2.50:9881/mcp --note 试
