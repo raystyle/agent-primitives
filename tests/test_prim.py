@@ -1,7 +1,7 @@
-"""prim 守卫(herdr-ccoe 批5a 迁移形):入口集、--llms 金样冻结、parse 黄金、信封结构、msg 回归、五域 VERBS、deliver 矩阵、手册漂移守卫。
+"""prim 守卫(herdr-ccoe 批5b 迁移形):入口集、--llms 金样冻结、parse 黄金、信封结构、msg 回归、全域 VERBS、deliver 矩阵、手册漂移守卫、acceptance.sh 离线断言下沉、脱敏扫描。
 
-金样 = 5a 六入口 --llms 全文(4.0.0 基线;agents/desks/tasks/machines 四面随批5b 补)。
-迁移脱敏裁定(2026-11-13,herdr-ccoe 批5a):金样示例活机器名/真实 IP 一律角色代称
+金样 = 十一入口 --llms 全文(4.0.0 基线;agents/desks/desk/tasks/machines 四面批5b 迁入合拢)。
+迁移脱敏裁定(2026-11-13,herdr-ccoe 批5a/5b):金样示例活机器名/真实 IP 一律角色代称
 (node-a / lab-node / 192.0.2.x 文档段),金样已再生,冻结语义 = 结构与动词面不变。
 """
 import contextlib
@@ -23,11 +23,13 @@ if str(PRIM_SRC) not in sys.path:
 from prim import cli, core, msg, runtime_ctx  # noqa: E402
 
 GOLDENS = Path(__file__).parent / "goldens"
-# 批5a:六入口(十一入口契约不变,agents/desks/desk/tasks/machines 随批5b 迁入)
-ENTRIES = ("shares", "streams", "pipes", "ports", "ctxs", "mcps")
-MAIN_ATTR = {"shares": "shares_main", "streams": "streams_main",
+# 批5b:十一入口全量(契约十一入口,desk = desks 单字别名)
+ENTRIES = ("agents", "desks", "desk", "shares", "streams", "tasks",
+           "pipes", "ports", "ctxs", "mcps", "machines")
+MAIN_ATTR = {"agents": "agents_main", "desks": "desk_main", "desk": "desk_main",
+             "shares": "shares_main", "streams": "streams_main", "tasks": "tasks_main",
              "pipes": "pipes_main", "ports": "ports_main", "ctxs": "ctxs_main",
-             "mcps": "mcps_main"}
+             "mcps": "mcps_main", "machines": "machines_main"}
 
 
 def run_llms(entry: str) -> str:
@@ -153,9 +155,10 @@ def test_version_single_source():
     pyproject = tomllib.loads((PRIM_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     ver = pyproject["project"]["version"]
     assert cli._pkg_ver() == ver
+    face_of = {"desk": "desks"}  # 单字别名入口打 desks 面(软切期同文)
     for entry in ENTRIES:
         first = (GOLDENS / f"{entry}.llms").read_text(encoding="utf-8").splitlines()[0]
-        assert f"{entry}@{ver}" in first, f"{entry} 手册头未带版本单源 {ver}"
+        assert f"{face_of.get(entry, entry)}@{ver}" in first, f"{entry} 手册头未带版本单源 {ver}"
 
 
 def test_no_hardcoded_v3_manual_headers():
@@ -164,7 +167,8 @@ def test_no_hardcoded_v3_manual_headers():
 
 
 def test_manual_dict_covers_all_command_faces():
-    for face in ENTRIES:
+    for face in ("agents", "desks", "machines", "shares", "streams", "tasks",
+                 "pipes", "ports", "ctxs", "mcps"):
         assert cli.manual(face).strip(), f"manual({face!r}) 空串(手册三真源回归)"
 
 
@@ -208,21 +212,23 @@ def test_msg_without_pydantic_fallback():
     assert r.returncode == 0 and "fallback-ok" in r.stdout, r.stderr
 
 
-# ---------- 批5a:五域 VERBS 注册表(tasks 随批5b;此处 shares/streams/pipes/ports) ----------
+# ---------- 批5b:五域 VERBS 注册表(tasks 判例用例随迁) ----------
 
 def test_domain_verb_registries():
-    from prim import shares, streams, pipes, ports
+    from prim import shares, streams, tasks, pipes, ports
     assert set(shares.VERBS) == {"view", "put", "get", "to"}
     assert set(streams.VERBS) == {"view", "rooms", "append", "to"}
+    assert set(tasks.VERBS) == {"view", "set", "to"}
     assert set(pipes.VERBS) == {"view", "open", "close", "send", "to"}
     assert set(ports.VERBS) == {"view", "open", "close", "fwd", "to"}
 
 
-# ---------- 批5a:deliver 矩阵(run_to 六域脚手架;引擎全 mock) ----------
+# ---------- 批5b:deliver 矩阵(tasks 两判例用例随迁;引擎全 mock) ----------
 
 import prim.deliver as deliver_mod  # noqa: E402
 import prim.shares as shares_mod  # noqa: E402
 import prim.streams as streams_mod  # noqa: E402
+import prim.tasks as tasks_mod  # noqa: E402
 import prim.pipes as pipes_mod  # noqa: E402
 import prim.ports as ports_mod  # noqa: E402
 
@@ -297,6 +303,29 @@ def test_deliver_matrix_streams_engine_fail_exits(monkeypatch, capsys):
     assert obj["data"]["status"] == "engine_fail"
 
 
+def test_deliver_matrix_tasks_to_no_exit_on_fail(monkeypatch, capsys):
+    """tasks to 非 delivered 不退 1,失败面走 stdout 单条 print(冻结行为)。"""
+    rec = _wire_deliver(monkeypatch, status="stalled")
+    monkeypatch.setattr(tasks_mod, "hst_task_set", _Recorder())
+    tasks_mod.VERBS["to"](["peer-claude-1", "评审后发版"], {})
+    out = capsys.readouterr()
+    assert "已设置" in out.out and "投递 stalled" in out.out
+    obj = json.loads([l for l in out.out.splitlines() if l.startswith("{")][0])
+    assert list(obj["data"]) == ["status", "target", "cwd"]
+
+
+def test_deliver_matrix_tasks_set_bypasses_gate(monkeypatch, capsys):
+    """D9:set 只写不扰,不走 run_to(引擎 mock 直测)。"""
+    import prim.addressing as addressing_mod
+    monkeypatch.setattr(addressing_mod, "resolve", lambda i: ("local", "w9:p1"))
+    monkeypatch.setattr(addressing_mod, "pane_cwd", lambda m, p: "/repo/x")
+    monkeypatch.setattr(tasks_mod, "_agents_of", lambda m: [{"pane_id": "w9:p1", "agent": "claude"}])
+    rec = _Recorder()
+    monkeypatch.setattr(tasks_mod, "hst_task_set", rec)
+    tasks_mod.VERBS["set"](["peer-claude-1", "评审后发版"], {})
+    assert rec.calls and rec.calls[0][0][2] == "评审后发版"
+
+
 def test_deliver_matrix_pipes_deferred_keeps_listener(monkeypatch, capsys):
     """pipes 拒投也先开听:addr 必在 deferred 载荷。"""
     import prim.tailcat_base as tb
@@ -323,22 +352,29 @@ def test_deliver_matrix_ports_delivered_payload_order(monkeypatch, capsys):
     assert obj["data"]["spec"] == "8123,8443"
 
 
-# ---------- 批5a:全域注册表 + 手册漂移守卫(CONTRACT 五节宣称) ----------
+# ---------- 批5b:全域注册表 + 手册漂移守卫(CONTRACT 五节宣称) ----------
 
 import prim.mcps as mcps_mod  # noqa: E402
 import prim.ctx as ctx_mod  # noqa: E402
+from prim import agents as agents_mod  # noqa: E402
+from prim import machines as machines_mod  # noqa: E402
 
 REGISTRIES = {
+    "agents": agents_mod.VERBS,
     "shares": shares_mod.VERBS,
     "streams": streams_mod.VERBS,
+    "tasks": tasks_mod.VERBS,
     "pipes": pipes_mod.VERBS,
     "ports": ports_mod.VERBS,
     "ctxs": ctx_mod.VERBS,
     "mcps": mcps_mod.VERBS,
+    "machines": machines_mod.VERBS,
 }
 
 # 手册动词段里出现但不进注册表的词:streams 的 room/dm 是前置改写动词(改写后走 view/append)
 _MANUAL_ONLY = {"streams": {"room", "dm"}}
+# 注册表在册但手册未文档化的隐藏别名
+_HIDDEN_ALIASES = {"machines": {"runtimes"}}
 _WORD = re.compile(r"^[a-z][a-z0-9_-]{1,18}$")
 
 
@@ -373,6 +409,8 @@ def test_registry_keys_documented_in_manual(face):
     """方向一:注册表键必须在手册出现(隐藏别名白名单豁免)。"""
     text = cli.manual(face)
     for key in REGISTRIES[face]:
+        if key in _HIDDEN_ALIASES.get(face, set()):
+            continue
         assert re.search(rf"\b{re.escape(key)}\b", text), \
             f"{face} 注册表键 {key} 未在手册文档化(手册漂移或实现私增)"
 
@@ -385,6 +423,12 @@ def test_manual_verbs_present_in_registry(face):
     for token in _manual_verb_tokens(face):
         assert token in verbs or token in allowed_extra, \
             f"{face} 手册动词 {token} 不在注册表(手册宣称未实现 = 漂移)"
+
+
+def test_desks_manual_verbs_covered_by_agents_registry():
+    """desks 手册动词(软拆 alias 期)必须都能由 agents 注册表分派。"""
+    for token in _manual_verb_tokens("desks"):
+        assert token in agents_mod.VERBS, f"desks 手册动词 {token} 在 agents 注册表缺位"
 
 
 # ---------- 批5a:acceptance.sh 离线断言下沉(缺口分析尺 2.2) ----------

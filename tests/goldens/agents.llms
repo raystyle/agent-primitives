@@ -1,0 +1,21 @@
+agents@4.0.0 - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
+文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
+全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
+动词:view [host];machines;list [机];ws|workbenches [机](工作台清点:home+~/repos/* 仓+origin);yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);read <id> [--lines N] [--timeout S];keys <id> <键>;run <id> <命令...>(格内跑命令,herdr pane run 原语壳);
+  to <id> <文本> [--force](投递即镜像 dm 流,回信事件道:wait 收)
+  wait [--from <id>] [--timeout S](阻塞等新入站消息,到件即返;引擎级轮询,agent 不再盲等)
+  inbox [--from <id>](非阻塞收件单:dm 流入站消息清单)
+  mode <dnd|away|online> [until](presence 走 shares 键);
+  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
+  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
+  shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
+  split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
+  zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
+  wt [机] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
+  trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
+id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+示例:
+  agents view
+  agents read node-a-claude-1 --lines 20
+  agents to node-a-claude-1 "评审请求已递" --json
+  agents dev node-a ~/repos/demo-rs --kind grok

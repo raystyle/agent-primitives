@@ -1,0 +1,10 @@
+desks@4.0.0 - 工位(pane)/窗台(workspace)操作器(拓扑面,ADR-0007 加 2026-10-25 复数对齐裁定;消息面走 agents,机册走 machines;desk 为旧名单字别名)
+术语:工位/窗格 = pane(p1,p1W);工作台/窗台 = workspace(w 编号,一个终端窗)
+view [host](拓扑视图:窗台->tab->工位分组,▍ 焦点工位,活动列 = 标题;含非 agent 工位;裸调用同)
+动词(与 agents 同实现,软拆 alias 期):
+  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];close <id>(优雅退)
+  split <id> [--direction right|down];tab <list|create|close>;zoom <id>;wt [机] [--title 名]
+  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台>;shell <机> <仓路径>;dev <机> <仓路径> [--kind 类]
+  yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);trust(信任屏放行);reload <id>(重载技能)
+id:裸名|机:名或格|local:格;示例:desks start node-a-kimi-2 --kind kimi --cwd ~/repos/demo;desks split node-a-claude-1
+alias 期:agents start/split/tab/... 同实现有效(1-2 大版本后收)

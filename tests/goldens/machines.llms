@@ -1,0 +1,15 @@
+machines@4.0.0 - 机册域:herdr machine 封装(第九原语;ADR-0007 由 nodes 更名,nodes 别名已淘汰)
+动词:view/list(册表+可达)/ status [名](全量或单机)/
+  add <ssh-target> [--label <名>] [--remote-session <名>](注册新节点,herdr 自动装远端并起 server)/
+  rename <名> --label <新名> / remove <名> / enable <名> / disable <名> / reconnect <名>/
+  runtime [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
+  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 ssh)/
+  run <节点> <格> <命令...>(格内跑命令)/ close <节点> <格>(直关格)/
+  pane <节点> <herdr pane 子面...>(list/get/read/split 直透)
+寻址:label 或 profile-id 皆收(label 优先);机册真源在 herdr
+示例:
+  machines view
+  machines add user@192.0.2.20 --label node-a
+  machines disable node-a
+  machines reconnect node-a
+

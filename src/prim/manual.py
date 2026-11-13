@@ -3,9 +3,9 @@
 契约(CONTRACT 五节):--help 与 --llms 同源;版本头从包元数据 stamp(pyproject 唯一源,
 禁手写漂移);手册动词表与分派注册表一致性由 tests/test_prim.py 断言。
 
-批5a 迁移注记(herdr-ccoe,脱敏令 2026-11-13):只带 5a 六域手册面(agents/desks/
-machines/tasks 四面随 5b 迁入);示例中活机器名/真实 IP 一律改角色代称
+批5a 迁移注记(herdr-ccoe,脱敏令 2026-11-13):示例中活机器名/真实 IP 一律改角色代称
 (node-a/node-b 形),金样同步再生(语义冻结点 = 结构与动词面,角色代称即冻结形)。
+批5b(2026-11-13):agents/desks/machines/tasks 四面迁入合拢,十一入口齐。
 """
 from __future__ import annotations
 
@@ -21,6 +21,52 @@ def _pkg_ver() -> str:
 
 def manual(cmd: str) -> str:
     m = {
+        "agents": f"""agents@{_pkg_ver()} - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
+文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
+全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
+动词:view [host];machines;list [机];ws|workbenches [机](工作台清点:home+~/repos/* 仓+origin);yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);read <id> [--lines N] [--timeout S];keys <id> <键>;run <id> <命令...>(格内跑命令,herdr pane run 原语壳);
+  to <id> <文本> [--force](投递即镜像 dm 流,回信事件道:wait 收)
+  wait [--from <id>] [--timeout S](阻塞等新入站消息,到件即返;引擎级轮询,agent 不再盲等)
+  inbox [--from <id>](非阻塞收件单:dm 流入站消息清单)
+  mode <dnd|away|online> [until](presence 走 shares 键);
+  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
+  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
+  shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
+  split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
+  zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
+  wt [机] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
+  trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
+id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+示例:
+  agents view
+  agents read node-a-claude-1 --lines 20
+  agents to node-a-claude-1 "评审请求已递" --json
+  agents dev node-a ~/repos/demo-rs --kind grok""",
+        "desks": f"""desks@{_pkg_ver()} - 工位(pane)/窗台(workspace)操作器(拓扑面,ADR-0007 加 2026-10-25 复数对齐裁定;消息面走 agents,机册走 machines;desk 为旧名单字别名)
+术语:工位/窗格 = pane(p1,p1W);工作台/窗台 = workspace(w 编号,一个终端窗)
+view [host](拓扑视图:窗台->tab->工位分组,▍ 焦点工位,活动列 = 标题;含非 agent 工位;裸调用同)
+动词(与 agents 同实现,软拆 alias 期):
+  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];close <id>(优雅退)
+  split <id> [--direction right|down];tab <list|create|close>;zoom <id>;wt [机] [--title 名]
+  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台>;shell <机> <仓路径>;dev <机> <仓路径> [--kind 类]
+  yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);trust(信任屏放行);reload <id>(重载技能)
+id:裸名|机:名或格|local:格;示例:desks start node-a-kimi-2 --kind kimi --cwd ~/repos/demo;desks split node-a-claude-1
+alias 期:agents start/split/tab/... 同实现有效(1-2 大版本后收)""",
+        "machines": f"""machines@{_pkg_ver()} - 机册域:herdr machine 封装(第九原语;ADR-0007 由 nodes 更名,nodes 别名已淘汰)
+动词:view/list(册表+可达)/ status [名](全量或单机)/
+  add <ssh-target> [--label <名>] [--remote-session <名>](注册新节点,herdr 自动装远端并起 server)/
+  rename <名> --label <新名> / remove <名> / enable <名> / disable <名> / reconnect <名>/
+  runtime [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
+  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 ssh)/
+  run <节点> <格> <命令...>(格内跑命令)/ close <节点> <格>(直关格)/
+  pane <节点> <herdr pane 子面...>(list/get/read/split 直透)
+寻址:label 或 profile-id 皆收(label 优先);机册真源在 herdr
+示例:
+  machines view
+  machines add user@192.0.2.20 --label node-a
+  machines disable node-a
+  machines reconnect node-a
+""",
         "shares": f"""shares@{_pkg_ver()} - 文件域:S3 中转(引擎 s5;内容哈希键)
 动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
 示例:
@@ -38,6 +84,12 @@ def manual(cmd: str) -> str:
   streams dm node-b-agent-1 私信验证
   cat build.log | streams append room/build
   streams to node-a fleet 回执-批X完成""",
+        "tasks": f"""tasks@{_pkg_ver()} - 持久任务域:hst task 全局遥控(引擎 hst)
+动词:view [host](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
+  set <id> <文本>;to <id> <文本> [--force](=set+知会)
+示例:
+  tasks view
+  tasks to node-a-claude-1 "评审收束后发版\"""",
         "pipes": f"""pipes@{_pkg_ver()} - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
 动词:view [host];open;close <addr|pid>;send <addr>(recipient:连管道发数据,stdin 直通);to <id> [--force](=open+模板知会,取用行 pipes send)
 示例:

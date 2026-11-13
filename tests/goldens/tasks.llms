@@ -1,0 +1,6 @@
+tasks@4.0.0 - 持久任务域:hst task 全局遥控(引擎 hst)
+动词:view [host](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
+  set <id> <文本>;to <id> <文本> [--force](=set+知会)
+示例:
+  tasks view
+  tasks to node-a-claude-1 "评审收束后发版"
