@@ -1,15 +1,15 @@
-machines@4.0.0 - 机册域:herdr machine 封装(第九原语;ADR-0007 由 nodes 更名,nodes 别名已淘汰)
-动词:view/list(册表+可达)/ status [名](全量或单机)/
-  add <ssh-target> [--label <名>] [--remote-session <名>](注册新节点,herdr 自动装远端并起 server)/
-  rename <名> --label <新名> / remove <名> / enable <名> / disable <名> / reconnect <名>/
-  runtime [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
-  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 ssh)/
+machines@5.0.0 - 机册域:hc machine.* 直通 + runtime 子面(骑 ark)
+动词:view | list(机册表:机/态/靶/版本;state 即可达性)/
+  add <ssh-target> [--name <名>] [--install](注册节点;--install 远端缺 hc 即装)/
+  reconnect <机名>(hc machine login 直通)/
   run <节点> <格> <命令...>(格内跑命令)/ close <节点> <格>(直关格)/
-  pane <节点> <herdr pane 子面...>(list/get/read/split 直透)
-寻址:label 或 profile-id 皆收(label 优先);机册真源在 herdr
+  runtime(s) [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
+  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 hc exec --on)
+机册裁定:三台常驻 hc(机册节点角色代称);机册外节点不进册,ssh 行为不变
+已退役(ADR-0003 重构;调用回 usage 指新道):status(并入 view)/ rename / remove(hc 直令)/
+  enable / disable(hc 机册无启停态,需求再现做本地标记)/ pane(对象消失,拓扑归 mod GUI)
 示例:
   machines view
-  machines add user@192.0.2.20 --label node-a
-  machines disable node-a
+  machines add user@192.0.2.20 --name node-a --install
   machines reconnect node-a
 

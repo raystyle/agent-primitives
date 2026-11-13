@@ -3,9 +3,9 @@
 契约(CONTRACT 五节):--help 与 --llms 同源;版本头从包元数据 stamp(pyproject 唯一源,
 禁手写漂移);手册动词表与分派注册表一致性由 tests/test_prim.py 断言。
 
-批5a 迁移注记(herdr-ccoe,脱敏令 2026-11-13):示例中活机器名/真实 IP 一律改角色代称
-(node-a/node-b 形),金样同步再生(语义冻结点 = 结构与动词面,角色代称即冻结形)。
-批5b(2026-11-13):agents/desks/machines/tasks 四面迁入合拢,十一入口齐。
+批5c(2026-11-13,ADR-0003 CONTRACT-v2):入口重组 11→6(agents/desks/machines/streams/
+carry/ctxs);tasks 并入 streams 子面;shares/pipes/ports 合成 carry;mcps 整域退役
+(ADR-0001 MCP 边缘化);退役动词各入口 help/CTA 可见化。
 """
 from __future__ import annotations
 
@@ -21,61 +21,54 @@ def _pkg_ver() -> str:
 
 def manual(cmd: str) -> str:
     m = {
-        "agents": f"""agents@{_pkg_ver()} - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
+        "agents": f"""agents@{_pkg_ver()} - 消息域:投递/门控/收件(任何格可投;CONTRACT-v2 十五动词)
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
 全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
-动词:view [host];machines;list [机];ws|workbenches [机](工作台清点:home+~/repos/* 仓+origin);yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);read <id> [--lines N] [--timeout S];keys <id> <键>;run <id> <命令...>(格内跑命令,herdr pane run 原语壳);
-  to <id> <文本> [--force](投递即镜像 dm 流,回信事件道:wait 收)
-  wait [--from <id>] [--timeout S](阻塞等新入站消息,到件即返;引擎级轮询,agent 不再盲等)
-  inbox [--from <id>](非阻塞收件单:dm 流入站消息清单)
+动词:view [host](格表:名/态/类/cwd;空 pane 异常态告警)/ workbenches [机](工作台清点:home+~/repos/* 仓+origin);
+  read <id> [--lines N] [--timeout S](读屏;working 时内候到闲/超时);
+  to <id> <文本> [--force](自由文投递:门控 → 拒投代记 → 信封 → dm 流镜像);
+  wait [--from <id>] [--timeout S](阻塞等新入站信封);inbox [--from <id>](非阻塞收件单);
   mode <dnd|away|online> [until](presence 走 shares 键);
-  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
-  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
-  shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
-  split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
-  zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
-  wt [机] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
-  trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+  start <名> --kind <类> [--cwd DIR] [--machine 机](起 agent,hc run 腿);
+  close <id>(优雅退场:/exit → shell exit,格自消);reload <id>(同 session 重进,重载技能);
+  trust(信任屏放行,判标库);yolo [--audit] | yolo <id> [--yes](四家 CLI 检测/冷翻);
+  run <id> <命令...>(格内跑命令);shell <机> <仓路径>(起 shell 格回址);dev <机> <仓路径> [--kind 类](起 agent + 启动后阻塞检测);
+  keys <id> <键>...(按键,一次多发)
+已退役(ADR-0003 重构;调用回 usage 指新道):list(并入 view --json)/ machines(machines view)/
+  sync(hc machine add --install)/ split / tab / zoom / wt(拓扑归 herdr-app mod GUI)
+id:裸名(全局唯一)| 机:名或格 | local:格;信封 from 机器段 = host_label
 示例:
   agents view
   agents read node-a-claude-1 --lines 20
   agents to node-a-claude-1 "评审请求已递" --json
   agents dev node-a ~/repos/demo-rs --kind grok""",
-        "desks": f"""desks@{_pkg_ver()} - 工位(pane)/窗台(workspace)操作器(拓扑面,ADR-0007 加 2026-10-25 复数对齐裁定;消息面走 agents,机册走 machines;desk 为旧名单字别名)
-术语:工位/窗格 = pane(p1,p1W);工作台/窗台 = workspace(w 编号,一个终端窗)
-view [host](拓扑视图:窗台->tab->工位分组,▍ 焦点工位,活动列 = 标题;含非 agent 工位;裸调用同)
-动词(与 agents 同实现,软拆 alias 期):
-  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];close <id>(优雅退)
-  split <id> [--direction right|down];tab <list|create|close>;zoom <id>;wt [机] [--title 名]
-  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台>;shell <机> <仓路径>;dev <机> <仓路径> [--kind 类]
-  yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);trust(信任屏放行);reload <id>(重载技能)
-id:裸名|机:名或格|local:格;示例:desks start node-a-kimi-2 --kind kimi --cwd ~/repos/demo;desks split node-a-claude-1
-alias 期:agents start/split/tab/... 同实现有效(1-2 大版本后收)""",
-        "machines": f"""machines@{_pkg_ver()} - 机册域:herdr machine 封装(第九原语;ADR-0007 由 nodes 更名,nodes 别名已淘汰)
-动词:view/list(册表+可达)/ status [名](全量或单机)/
-  add <ssh-target> [--label <名>] [--remote-session <名>](注册新节点,herdr 自动装远端并起 server)/
-  rename <名> --label <新名> / remove <名> / enable <名> / disable <名> / reconnect <名>/
-  runtime [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
-  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 ssh)/
+        "desks": f"""desks@{_pkg_ver()} - 工位拓扑兜底(view/start/close 三动词;树形主力 = herdr-app mod GUI)
+术语:工位/窗格 = pane;工作台/窗台 = workspace(hc where 字段线)
+view [host](全量工位表:机/格/类/态/活动;裸调用同;--json 出行形)
+start <名> --kind <类> [--cwd DIR] [--machine 机];close <id>(优雅退)
+已退役(ADR-0003 重构;调用回 usage 指新道):split / tab / zoom / wt(拓扑归 mod GUI);
+  desk 单字别名删除(消费方可断裁定);shell/dev/ws/yolo/trust/reload 走 agents 面
+id:裸名 | 机:名或格 | local:格;示例:desks view;desks close local:t1r""",
+        "machines": f"""machines@{_pkg_ver()} - 机册域:hc machine.* 直通 + runtime 子面(骑 ark)
+动词:view | list(机册表:机/态/靶/版本;state 即可达性)/
+  add <ssh-target> [--name <名>] [--install](注册节点;--install 远端缺 hc 即装)/
+  reconnect <机名>(hc machine login 直通)/
   run <节点> <格> <命令...>(格内跑命令)/ close <节点> <格>(直关格)/
-  pane <节点> <herdr pane 子面...>(list/get/read/split 直透)
-寻址:label 或 profile-id 皆收(label 优先);机册真源在 herdr
+  runtime(s) [view|init|check|install|update|doctor|heal|config] [工具...](agent 运行时环境面,
+  骑 ark;栈真源 = 仓根 runtimes.toml 仓 agent 自定;--machine <节点> 跨机经 hc exec --on)
+机册裁定:三台常驻 hc(机册节点角色代称);机册外节点不进册,ssh 行为不变
+已退役(ADR-0003 重构;调用回 usage 指新道):status(并入 view)/ rename / remove(hc 直令)/
+  enable / disable(hc 机册无启停态,需求再现做本地标记)/ pane(对象消失,拓扑归 mod GUI)
 示例:
   machines view
-  machines add user@192.0.2.20 --label node-a
-  machines disable node-a
+  machines add user@192.0.2.20 --name node-a --install
   machines reconnect node-a
 """,
-        "shares": f"""shares@{_pkg_ver()} - 文件域:S3 中转(引擎 s5;内容哈希键)
-动词:view;put <文件>;get <键> [-o|--output 名];to <id> <文件> [--force](=上架+模板知会)
-示例:
-  shares put report.md
-  shares to node-a report.md --json""",
-        "streams": f"""streams@{_pkg_ver()} - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
+        "streams": f"""streams@{_pkg_ver()} - 流域:S2 持久流(引擎 s5;room 即房间)+ tasks 子面(任务即流)
 动词:rooms(列房间);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
   dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
-  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
+  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force];
+  task view [host](实时任务面)/ task set <id> <文本>(只写不扰,绕门控)/ task to <id> <文本>(设+知会)
 示例:
   streams rooms
   streams room fleet
@@ -83,47 +76,35 @@ alias 期:agents start/split/tab/... 同实现有效(1-2 大版本后收)""",
   streams room gateway-logging 日志请看 --file app.log --lines 50-62
   streams dm node-b-agent-1 私信验证
   cat build.log | streams append room/build
-  streams to node-a fleet 回执-批X完成""",
-        "tasks": f"""tasks@{_pkg_ver()} - 持久任务域:hst task 全局遥控(引擎 hst)
-动词:view [host](实时任务面:fleet 状态总览加本机各仓 hst task show 直读;远机任务经 agents read <id> 看屏);
-  set <id> <文本>;to <id> <文本> [--force](=set+知会)
+  streams to node-a fleet 回执-批X完成
+  streams task view;streams task set node-a-claude-1 评审后发版
+退役注记:tasks 独立入口已并入本面(`streams task ...`;CONTRACT-v2 任务即流)""",
+        "carry": f"""carry@{_pkg_ver()} - 搬运域:同构三合一(shares 文件 + pipes 管道 + ports 端口;CONTRACT-v2 新入口)
+裸形(智能分派):put <文件>;get <键> [-o 名];open [spec](无参 = 管道,带 spec = 端口映射);
+  close <地址或pid>(双域联合寻址,唯一命中即关);send <addr>(连对方管道发,stdin 直通);
+  fwd <addr> <local>:<remote-port>(本地起听转发,0 = 空口);to <id> ...(文件 → shares / spec → ports / 裸 id → pipes);view [--shares|--pipes|--ports] [host](三面合一总览)
+显式道(消歧逃生口,域内动词面不变):
+  carry shares put|get|to;carry pipes open|close|send|to;carry ports open|close|fwd|to
+域面(shares):put 上架(内容哈希键 share/<机>/<h>/<名>);get 按键取回;to 先上架再门控
+域面(pipes):open 起收听(常驻至 close);close 杀进程收档广播;send 连管道 stdin 直通
+域面(ports):open <spec>(8080,8443 端口表 / 5555:IP:5555 服务侧映射 / all / exit-node);fwd 本地起听转发;close 停映射
 示例:
-  tasks view
-  tasks to node-a-claude-1 "评审收束后发版\"""",
-        "pipes": f"""pipes@{_pkg_ver()} - 管道域:tailcat 实时(本机收对方发;管道常驻至 close)
-动词:view [host];open;close <addr|pid>;send <addr>(recipient:连管道发数据,stdin 直通);to <id> [--force](=open+模板知会,取用行 pipes send)
-示例:
-  pipes view node-a
-  pipes to node-a""",
-        "ports": f"""ports@{_pkg_ver()} - 端口域:任意节点端口转发映射(引擎 tailcat serve;映射常驻至 close)
-动词:view [host];open <spec>(spec = 8080,8443 端口表 / 5555:IP:5555 服务侧映射,serve 面被服务端口,非客户端监听 / all / exit-node);close <addr|pid>;fwd <addr> <local>:<remote-port>(recipient: local listener, 0 = free port, Ctrl+C to stop);to <id> <spec> [--force](=open+模板知会,取用行 ports fwd 全端口枚举)
-示例:
-  ports view node-a
-  ports open 8123
-  ports open 5555:192.0.2.10:5555
-  ports to node-a 8123""",
+  carry put report.md
+  carry open 8123
+  carry close tcADDR
+  carry to node-a report.md --json
+  carry ports to node-a 8123
+退役注记:shares/pipes/ports 独立入口并入本面(域内动词面不变)""",
         "ctxs": f"""ctxs@{_pkg_ver()} - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctxs=历史档案)
 动词:view [agent] [--limit N] [--since <ts>] [--before <ts>](最近请求头行:时间/模型/token/耗时/request_id;时间窗直裁分区,翻页找目标日用);
   show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
   search <词> [--term <词>]... [--limit N] [--days N](跨请求全文,多词 OR;每行带命中片段 snip;--days 扫描窗缺省 1 天) [--since <ts>] [--before <ts>](精确窗覆盖 --days)
 窗口:head 365 天,gwlog 正文 180 天;词至少 2 字符(UTF-8 计)
+退役注记:mcps 域整域退役(ADR-0001 MCP 边缘化,用户裁定 2026-11-13;连通用 MCP 客户端腿也不留)
 示例:
   ctxs view
   ctxs show 0192a0f0-xxxx --around "挂死" --window 1
   ctxs search "panic"
   ctxs search --term 杀树 --term ensure_ascii""",
-        "mcps": f"""mcps@{_pkg_ver()} - MCP 域:通用 MCP 客户端(第八原语,出站;引擎 mcp2cli)
-文法:mcps [全局旗标] <动词> [位置参数];裸调用 = view
-动词:view [目标](在册表+健康)/ tools <目标>(列 tools)/
-  call <目标> <tool> [--arg k=v]... [--arg-json k=<json>]...(调用;值字符串形透传)/
-  add <名> --url <URL> [--note <注>]/ remove <名>
-注册表:~/.config/mcps/targets.yaml(名->url;MCPS_REGISTRY env 覆盖)
-超时:--timeout <s> 覆盖;view/tools 默认 10s、call 120s,上限 600
-示例:
-  mcps view
-  mcps tools lab-node
-  mcps call lab-node shell --arg cmd=whoami --arg wait=true
-  mcps call lab-node spawn --arg-json 'argv=["notepad"]'
-  mcps add my-mcp --url http://192.0.2.50:9881/mcp --note 试""",
     }
     return m.get(cmd, "")

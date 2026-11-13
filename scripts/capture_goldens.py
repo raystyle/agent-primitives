@@ -1,8 +1,8 @@
-"""再生 tests/goldens 十一入口 --llms 金样(手动道;批5b 迁移形)。
+"""再生 tests/goldens 六入口 --llms 金样(手动道;批5c CONTRACT-v2 形)。
 
 用法:cd prim && uv run python scripts/capture_goldens.py
-金样是契约冻结的执法基线(ADR-0008):改手册面前先过放行点裁定,改后跑本件再生,
-diff 面入评审。批5b 起 = 十一入口全量(agents/desks/desk/tasks/machines 已迁入)。
+金样按 ADR-0003 决策 5:重构回归参照(不再是不可 rebaseline 的冻结面);
+旧十一入口金样归档 tests/goldens/archive-v1/(迁移证据);diff 面入评审。
 """
 import contextlib
 import io
@@ -14,10 +14,8 @@ sys.path.insert(0, str(PRIM_ROOT / "src"))
 
 from prim import cli  # noqa: E402
 
-MAIN_ATTR = {"agents": "agents_main", "desks": "desk_main", "desk": "desk_main",
-             "shares": "shares_main", "streams": "streams_main", "tasks": "tasks_main",
-             "pipes": "pipes_main", "ports": "ports_main", "ctxs": "ctxs_main",
-             "mcps": "mcps_main", "machines": "machines_main"}
+MAIN_ATTR = {"agents": "agents_main", "desks": "desk_main", "machines": "machines_main",
+             "streams": "streams_main", "carry": "carry_main", "ctxs": "ctxs_main"}
 
 
 def main() -> None:

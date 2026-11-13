@@ -1,19 +1,19 @@
-agents@4.0.0 - 消息域:全局 pane 操作器(隐式路由,任何端点可用)
+agents@5.0.0 - 消息域:投递/门控/收件(任何格可投;CONTRACT-v2 十五动词)
 文法:agents [全局旗标] <动词> [动词旗标] [位置参数];裸调用 = view
 全局旗标:--help -h --llms --json --format <fmt> --full-output --filter-output <pat> --schema --force(投递)
-动词:view [host];machines;list [机];ws|workbenches [机](工作台清点:home+~/repos/* 仓+origin);yolo [--audit]|yolo <id> [--yes](四家 CLI 检测/冷翻);read <id> [--lines N] [--timeout S];keys <id> <键>;run <id> <命令...>(格内跑命令,herdr pane run 原语壳);
-  to <id> <文本> [--force](投递即镜像 dm 流,回信事件道:wait 收)
-  wait [--from <id>] [--timeout S](阻塞等新入站消息,到件即返;引擎级轮询,agent 不再盲等)
-  inbox [--from <id>](非阻塞收件单:dm 流入站消息清单)
+动词:view [host](格表:名/态/类/cwd;空 pane 异常态告警)/ workbenches [机](工作台清点:home+~/repos/* 仓+origin);
+  read <id> [--lines N] [--timeout S](读屏;working 时内候到闲/超时);
+  to <id> <文本> [--force](自由文投递:门控 → 拒投代记 → 信封 → dm 流镜像);
+  wait [--from <id>] [--timeout S](阻塞等新入站信封);inbox [--from <id>](非阻塞收件单);
   mode <dnd|away|online> [until](presence 走 shares 键);
-  start <名> --kind <类> [--pane 格] [--cwd DIR] [--machine 机];
-  ws <label> [--cwd DIR] [--machine 机]|ws list [机]|ws close <台> [机];
-  shell <机> <仓路径>(开台 shell 回 root 格);dev <机> <仓路径> [--kind 类](开台+起 agent);
-  split <id> [--direction right|down];tab <list [机]|create <机>|close <机:tab>>;
-  zoom <id>;close <id>(关格零击杀:agent /exit 优雅退后 shell exit,格自消);
-  wt [机] [--title 名](win 专属:本窗开 tab 显该机窗格视图);
-  trust(信任屏放行);sync(机册面);reload <id>(同格同 session 重进,重载技能与插件)
-id:裸名(全局,投递回信用bare alias)|机:名或格|local:格;裸 pane id 非法;信封 from 机器段 = host_label
+  start <名> --kind <类> [--cwd DIR] [--machine 机](起 agent,hc run 腿);
+  close <id>(优雅退场:/exit → shell exit,格自消);reload <id>(同 session 重进,重载技能);
+  trust(信任屏放行,判标库);yolo [--audit] | yolo <id> [--yes](四家 CLI 检测/冷翻);
+  run <id> <命令...>(格内跑命令);shell <机> <仓路径>(起 shell 格回址);dev <机> <仓路径> [--kind 类](起 agent + 启动后阻塞检测);
+  keys <id> <键>...(按键,一次多发)
+已退役(ADR-0003 重构;调用回 usage 指新道):list(并入 view --json)/ machines(machines view)/
+  sync(hc machine add --install)/ split / tab / zoom / wt(拓扑归 herdr-app mod GUI)
+id:裸名(全局唯一)| 机:名或格 | local:格;信封 from 机器段 = host_label
 示例:
   agents view
   agents read node-a-claude-1 --lines 20

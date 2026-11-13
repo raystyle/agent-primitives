@@ -1,4 +1,5 @@
-"""prim streams 域(批3R 自 domains 拆出):流域,S2 持久流(引擎 s5;room 即房间)"""
+"""prim streams 域(批3R 拆出;批5c CONTRACT-v2):流域,S2 持久流(引擎 s5;room 即房间)
++ tasks 子面(任务即流:`streams task view|set|to`,tasks 入口随入口重组退役)。"""
 from __future__ import annotations
 import json
 import os
@@ -161,7 +162,13 @@ def _room_dm_rewrite(verb: str, pos: list[str]) -> tuple[str, list[str]]:
     return verb, pos
 
 
-VERBS = {"rooms": _rooms, "view": _view, "append": _append,
+def _task(pos: list[str], g: dict):
+    # tasks 并入(CONTRACT-v2:任务即流,`streams task view|set|to`)
+    from .tasks import task_main
+    return task_main(pos, g)
+
+
+VERBS = {"rooms": _rooms, "view": _view, "append": _append, "task": _task,
          "to": lambda pos, g: run_to("streams", pos, _TO)}
 
 
@@ -171,5 +178,5 @@ def streams_main():
     verb, pos = _room_dm_rewrite(verb, pos)
     handler = VERBS.get(verb)
     if handler is None:
-        die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)
+        die("usage", f"未知动词「{verb}」(rooms/room/dm/view/append/to/task);--llms 看手册", rc=2)
     handler(pos, g)

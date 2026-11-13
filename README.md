@@ -1,46 +1,44 @@
 # prim — agent 原语命令(uv 工具包)
 
-ai-ccoe `plugins/prim` 的 herdr-ccoe 迁移形(PLAN-ai-ccoe-migration **批5a 零耦合域 + 批5b 策略层四域**,2026-11-13)。包名保持 `prim`,契约 = 仓内 `CONTRACT.md`(ADR-0008 冻结形,十一入口真源)。
+ai-ccoe `plugins/prim` 的 herdr-ccoe 迁移形,批5c 已按 **ADR-0003 放开重构 + CONTRACT-v2** 重塑(2026-11-13)。包名保持 `prim`,契约 = 仓内 `CONTRACT-v2.md`(六入口真源;v1 契约归档 `CONTRACT-v1.md`)。
 
-## 迁移范围(5a + 5b,十一入口全量)
+## 入口(CONTRACT-v2 方案甲,11 → 6)
 
-- **零耦合六域(5a)**:`shares`(S3 文件中转,引擎 s5)/ `streams`(持久流,引擎 s5)/ `pipes`(tailcat 管道)/ `ports`(tailcat 端口映射)/ `ctxs`(ClickHouse gw_logs 检索)/ `mcps`(通用 MCP 客户端,引擎 mcp2cli)
-- **策略层四域(5b)**:`agents`(消息域:to/wait/inbox/read/keys/mode/reload + 拓扑动词 + 透传)/ `desks`(拓扑面,desk 单字别名)/ `tasks`(hst task 遥控)/ `machines`(herdr machine 机册封装 + runtime 子面骑 ark)
-- **契约**:`CONTRACT.md`(十一入口契约单一真源,随 5b 迁入;示例活名已脱敏为角色代称)
-- **共享叶子**:`runtime_ctx`(态与信封)/ `engines`(进程树收割 + wsl 代役)/ `identity` / `addressing` / `gating` / `flags` / `deliver` / `manual` / `msg` / `tailcat_base` / `agents_view` / `agents_events` / `agents_lifecycle` / `agents_topo` / `agents_ws_scan` / `agents_yolo` / `runtimes`
+- `agents` — 消息域:to/wait/inbox/read/mode/start/close/reload/trust/yolo/run/shell/dev/keys/workbenches(退役可见化:list/machines/sync/split/tab/zoom/wt)
+- `desks` — 工位拓扑兜底:view/start/close(退役可见化:split/tab/zoom/wt;desk 单字别名删除)
+- `machines` — 机册(hc machine.* 直通)+ runtime 子面(骑 ark)(退役可见化:status/rename/remove/enable/disable/pane)
+- `streams` — 持久流(引擎 s5)+ tasks 子面(任务即流:`streams task view|set|to`)
+- `carry` — 同构搬运三合一:shares/pipes/ports 域面不变,裸形智能分派(`carry put|get|open|close|send|to|fwd|view`)
+- `ctxs` — ClickHouse gw_logs 检索(mcps 域整域退役,ADR-0001 MCP 边缘化)
 
-## 运行前提(引擎二进制)
+退役动词调用即 usage 退 2,错误面带「已退役(ADR-0003)」+ 新道指路(kubectl 废弃可见化)。
 
-| 引擎 | 用于 | 本机缺省 |
+## 引擎面(批5c 置换)
+
+| 引擎 | 用于 | 说明 |
 |---|---|---|
+| `hc`(herdr-core) | agents/machines/addressing 全域终端面 | **单点客户端** `src/prim/engines.py`(hc_run / hc_json / hc_exec_on);TS 侧单点 = `cli/src/lib/hc.ts`;常驻 JSON-RPC 留演进位 |
 | `s5` | shares / streams | PATH;win 无原生时走 WSL 代役(`PRIM_WSL_S5` env 指路,或运行时探测 WSL `$HOME/.local/bin/s5`) |
-| `herdr` | agents/machines 域 + addressing(全域 view 与 to 都要) | PATH |
-| `hst` | tasks 域 | PATH |
+| `hst` | streams task 子面 | PATH |
 | `ark` | machines runtime 子面(环境检查) | PATH 或 `ARK_BIN` env |
 | `tailcat` | pipes / ports | PATH |
-| `mcp2cli` | mcps | **`MCPS_BIN` env 或 PATH,二选一**(零硬编码路径回退,缺位即 structured error) |
 | ClickHouse gwlogs | ctxs | `CTX_URL/CTX_USER/CTX_PASSWORD`(或 `~/.ctx/reader.env`);ssh 兜底道须 `CTX_SSH_HOST`(零真实缺省) |
 
-缺二进制时命令面出 structured error(`engine_fail`,stderr 单行 JSON + CTA,退出码 1),不挂死不裸栈。
+跨机腿三处(workbenches / yolo / runtimes)已换 `hc exec --on`(hc 机册节点);机册外节点保持原 ssh 道。缺二进制时 structured error(`engine_fail`,stderr 单行 JSON + CTA,退出码 1)。
 
 ## 使用
 
 ```bash
 cd prim
 uv sync
-uv run pytest          # 79 用例(金样冻结十一枚 / deliver 矩阵含 tasks 判例 / 漂移守卫 / 脱敏扫描)
+uv run pytest          # 73 用例(金样 v2 六枚 / 退役可见化断言 / deliver 矩阵 / hc 守卫 / 脱敏扫描)
 
-uv run shares --llms   # 手册面(十一入口同式)
-uv run agents view      # 十一入口 `uv run <域> <动词>` 即用(未装全局工具)
+uv run carry --llms    # 手册面(六入口同式)
+uv run agents view     # `uv run <入口> <动词>` 即用(未装全局工具)
 ```
 
-金样再生:`uv run python scripts/capture_goldens.py`(改手册面须先过 ADR-0008 放行点裁定)。
+金样再生:`uv run python scripts/capture_goldens.py`(金样 = 重构回归参照,ADR-0003 决策 5;旧十一入口金样归档 `tests/goldens/archive-v1/`)。
 
 ## 迁移脱敏裁定(2026-11-13)
 
-- `mcps.py` win 仓内 mcp2cli 路径回退退役 → `MCPS_BIN` env / PATH 必填
-- `engines.py` wsl 代役 s5 路径 → 运行时探测 WSL `$HOME`(env `PRIM_WSL_S5` / `PRIM_WSL_HOME` 可覆盖)
-- 金样与手册示例活机器名/真实 IP → 角色代称(node-a / lab-node / RFC 5737 文档段 192.0.2.x)
-- `ctx.py` ssh 兜底道宿主 → `CTX_SSH_HOST` 必填(零真实缺省)
-
-测试钉死:`test_no_real_values_in_source`(源面敏感模式扫描)+ `test_llms_golden_sanitized`(金样活名扫描)。
+示例与源面零真实值:活机器名/真实 IP 一律角色代称(node-a / lab-node / RFC 5737 192.0.2.x),扫描钉死在 pytest(`test_no_real_values_in_source` / `test_llms_golden_sanitized`)。

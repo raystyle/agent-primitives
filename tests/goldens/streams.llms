@@ -1,7 +1,8 @@
-streams@4.0.0 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
+streams@5.0.0 - 流域:S2 持久流(引擎 s5;room 即房间)+ tasks 子面(任务即流)
 动词:rooms(列房间);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
   dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
-  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
+  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force];
+  task view [host](实时任务面)/ task set <id> <文本>(只写不扰,绕门控)/ task to <id> <文本>(设+知会)
 示例:
   streams rooms
   streams room fleet
@@ -10,3 +11,5 @@ streams@4.0.0 - 流域:S2 持久流(引擎 s5;room 即房间,一等概念)
   streams dm node-b-agent-1 私信验证
   cat build.log | streams append room/build
   streams to node-a fleet 回执-批X完成
+  streams task view;streams task set node-a-claude-1 评审后发版
+退役注记:tasks 独立入口已并入本面(`streams task ...`;CONTRACT-v2 任务即流)

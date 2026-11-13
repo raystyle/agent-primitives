@@ -7,6 +7,14 @@ from __future__ import annotations
 import json
 import sys
 
+# stdout/stderr 恒 utf-8(win 控制台缺省 GBK,屏面 unicode 会让 agent 消费面挂死)
+for _s in (sys.stdout, sys.stderr):
+    if hasattr(_s, "reconfigure"):
+        try:
+            _s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
 # ---------- 全局态(每命令入口经 flags.setup() 重置) ----------
 
 CMD_NAME = "agents"
@@ -46,7 +54,7 @@ def die(code: str, message: str, cta: list[dict] | None = None, rc: int = 1):
 
 
 def guard(fn):
-    """顶层 Ctrl+C 净化:单行退出码 130,不出 traceback(孙进程收割在 herdr_run)。"""
+    """顶层 Ctrl+C 净化:单行退出码 130,不出 traceback(孙进程收割在引擎 spawn 层)。"""
     import functools
     import sys as _sys
 

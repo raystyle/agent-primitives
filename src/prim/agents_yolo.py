@@ -9,13 +9,14 @@
   grok always-approve。
 """
 from __future__ import annotations
-from . import core
 import json
 import os
 import subprocess
 import sys
 import time
-from .core import die, emit_ok, eprint, herdr_run, _agents_of, _machine_labels
+from .addressing import _agents_of, _machine_labels, resolve
+from .core import die, emit_ok, eprint
+from .engines import exec_result, hc_exec_on, hc_run
 
 # 检测正则族(状态栏实读形;研究单判据表,按序首中即判)
 MODE_PATTERNS: dict[str, list] = {
@@ -53,10 +54,9 @@ CFG_PATHS = {"claude": "~/.claude/settings.json", "codex": "~/.codex/config.toml
              "kimi": "~/.kimi-code/config.toml", "grok": "~/.grok/config.toml"}
 
 
-def detect(machine: str, pane: str, kind: str):
+def detect(machine: str, addr: str, kind: str):
     """读屏判模式 -> (mode 显示串, yolo)。读不到 = (None, None)。"""
-    m = None if machine in ("", "local") else machine
-    r = herdr_run(m, "agent", "read", pane, "--lines", "25", timeout=30)
+    r = hc_run("read", addr, "--lines", "25", timeout=30)
     visible = (r.stdout or "") + (r.stderr or "")
     for pat, is_yolo in MODE_PATTERNS.get(kind, []):
         if pat in visible:
@@ -173,15 +173,19 @@ _REMOTE_WRITER = (
 
 
 def _write_config(kind: str, machine):
-    """写用户级 yolo 配置;远端经 ssh 家目录写。返回路径/错误说明。"""
+    """写用户级 yolo 配置;机册机经 hc exec --on 家目录写,机册外走原 ssh 道。返回路径/错误说明。"""
     if machine and machine not in ("", "local"):
         import shlex
-        # 机册 target 形(user@host)直连:裸机名走 ssh config 默认用户会写错家(win 默认 root 的坑)
-        from .runtimes import _machine_target
-        target = _machine_target(machine)
         cmd = "python3 -c " + shlex.quote(_REMOTE_WRITER) + " " + shlex.quote(kind)
-        r = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", target, cmd],
-                           capture_output=True, text=True, timeout=60)
+        if machine in _machine_labels():
+            # hc 机册节点:hc exec --on(ssh 手搓退役;exec argv 不经 shell,python3 -c 单参)
+            r = exec_result(hc_exec_on(machine, ["python3", "-c", cmd], timeout=60))
+        else:
+            # 机册外:原 ssh 道(红线不动)
+            from .runtimes import _machine_target
+            target = _machine_target(machine)
+            r = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", target, cmd],
+                               capture_output=True, text=True, timeout=60)
         if r.returncode != 0:
             return f"remote-write-fail: {(r.stderr or '')[:120]}"
         return r.stdout.strip() or "(remote)"
@@ -190,29 +194,20 @@ def _write_config(kind: str, machine):
 
 def yolo_main(pos: list, g: dict) -> None:
     """agents yolo [--audit] | yolo <id> [--yes]:全舰队检测 / 单格冷翻。"""
-    from .cli import resolve
     yes = "--yes" in sys.argv
     pos = [a for a in pos if not a.startswith("-")]
 
     if not pos:
         # 全舰队检测面(local + 各在册机)
         rows = []
-        scopes = [("local", "")]
-        for lab in _machine_labels():
-            scopes.append((lab, lab))
-        for host, m in scopes:
-            try:
-                ags = _agents_of(m or None, timeout=15)
-            except Exception:
+        for a in _agents_of(None) + [x for lab in _machine_labels() for x in _agents_of(lab)]:
+            kind = a.get("agent") or ""
+            if kind not in MODE_PATTERNS:
                 continue
-            for a in ags:
-                kind = a.get("agent") or ""
-                if kind not in MODE_PATTERNS:
-                    continue
-                mode, is_yolo = detect(m, a.get("pane_id", ""), kind)
-                rows.append({"machine": host, "pane": a.get("pane_id"),
-                             "kind": kind, "cwd": a.get("cwd"),
-                             "mode": mode, "yolo": is_yolo})
+            mode, is_yolo = detect(a["machine"], a["hc_address"], kind)
+            rows.append({"machine": a["machine"], "pane": a.get("pane_id"),
+                         "kind": kind, "cwd": a.get("cwd"),
+                         "mode": mode, "yolo": is_yolo})
         if g.get("json"):
             emit_ok({"status": "ok", "count": len(rows), "rows": rows})
             return
@@ -230,44 +225,51 @@ def yolo_main(pos: list, g: dict) -> None:
             print("\n全绿(? = 屏面无模式串,不可判)")
         return
 
-    # 单格翻台(冷翻三步:写配置 -> 退场 -> fresh 起)
-    m, pane = resolve(pos[0])
-    agents = _agents_of(None if m in ("", "local") else m)
-    me = next((a for a in agents if a.get("pane_id") == pane), None)
+    # 单格翻台(冷翻三步:写配置 -> /exit 退场 -> fresh 起)
+    m, addr = resolve(pos[0])
+    me = next((a for a in _agents_of(m) if a.get("hc_address") == addr), None)
     kind = (me or {}).get("agent") or ""
     if kind not in CONFIG_RECIPES:
         die("usage", f"「{kind or '?'}」不在四家面(claude/codex/kimi/grok)", rc=2)
-    before_mode, before_yolo = detect(m, pane, kind)
+    before_mode, before_yolo = detect(m, addr, kind)
     if before_yolo:
         print(f"agents: 已是 yolo({before_mode}),无需翻")
         emit_ok({"status": "ok", "target": f"{m}:{pane}", "kind": kind,
                  "before": before_mode, "after": before_mode, "executed": False})
         return
     if not yes:
-        print(f"plan: {kind} 冷翻 @ {m}:{pane}")
+        print(f"plan: {kind} 冷翻 @ {m}:{addr}")
         print(f"  1) 写用户级 {CFG_PATHS[kind]}(全跳过值;研究单配方)")
         print("  2) /exit 退场(冷翻 = 新进程吃新配置;会话上下文不迁)")
         print("  3) fresh 起 CLI")
         print("  默认预览未执行;加 --yes 执行本次变更")
-        emit_ok({"status": "planned", "target": f"{m}:{pane}", "kind": kind, "before": before_mode})
+        emit_ok({"status": "planned", "target": f"{m}:{addr.rsplit('/', 1)[-1]}", "kind": kind, "before": before_mode})
         return
-    hm = None if m in ("", "local") else m
     wrote = _write_config(kind, m)
-    herdr_run(hm, "agent", "prompt", pane, "/exit", "--wait", "--until", "working", "--timeout", "15000", timeout=45)
+    hc_run("send", addr, "/exit", timeout=45)
     for _ in range(12):
         time.sleep(1.5)
-        r = herdr_run(hm, "agent", "get", pane, timeout=10)
-        if r.returncode != 0:
+        from .addressing import row_of
+        rr = row_of(addr)
+        if not rr or rr.get("state") != "live":
             break
-    herdr_run(hm, "pane", "run", pane, CLI_CMD[kind], timeout=30)
+    argv = ["run", "--bg", "--no-notify", "--outlive-parent", CLI_CMD[kind]]
+    cwd = (me or {}).get("cwd") or ""
+    if cwd:
+        argv += ["--cwd", cwd]
+    if m not in ("", "local"):
+        argv += ["--on", m]
+    rk, new_addr = __import__("prim.agents_lifecycle", fromlist=["run_bg"]).run_bg(argv)
+    detect_addr = new_addr or addr
     after_mode, after_yolo = None, None
     for _ in range(15):
         time.sleep(2.5)
-        after_mode, after_yolo = detect(m, pane, kind)
+        after_mode, after_yolo = detect(m, detect_addr, kind)
         if after_yolo:
             break
-    print(f"yolo 翻 {m}:{pane}({kind}):{before_mode} -> {after_mode}"
+    print(f"yolo 翻 {m}:{addr.rsplit('/', 1)[-1]}({kind}):{before_mode} -> {after_mode}"
+          + (f" @{new_addr}" if new_addr else "")
           + ("  OK" if after_yolo else "  仍非 yolo(查托管/requirements 锁)"))
-    emit_ok({"status": "ok", "target": f"{m}:{pane}", "kind": kind,
+    emit_ok({"status": "ok", "target": f"{m}:{addr.rsplit('/', 1)[-1]}", "kind": kind,
              "before": before_mode, "after": after_mode, "executed": True,
-             "ok": after_yolo is True, "config": wrote})
+             "ok": after_yolo is True, "config": wrote, "pane": new_addr})

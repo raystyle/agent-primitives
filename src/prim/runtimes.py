@@ -1,17 +1,20 @@
-"""machines runtime 子面:agent 运行时环境检查与管理(挂在 machines 下,不立新原语;用户令 2026-10-17)。
+"""machines runtime 子面:agent 运行时环境检查与管理(挂在 machines 下,不立新原语)。
 
 骑 ark(Agent Runtime Kit)为引擎。栈真源 = 仓根 runtimes.toml(由工作台仓的
-agent 自己定);本面对照 ark 三态(locked/installed/path)做检查与管理,
-天然跨机(machines 机册节点经 ssh 直跑远端 ark)。config 面 v1 只读。
+agent 自己定);本面对照 ark 三态(locked/installed/path)做检查与管理。
+跨机腿(批5c hc 化):hc 机册节点走 `hc exec --on`(login 形 bash -lc 保 PATH);
+机册外节点保持原 ssh 道(红线:机册三台外不改 ssh 行为)。config 面 v1 只读。
 """
 from __future__ import annotations
-from . import core
 import json
 import os
+import shlex
 import subprocess
 import sys
+
+from .addressing import _machine_labels, _machines_raw
 from .core import die, emit_ok, eprint
-from .machines import _machines_raw
+from .engines import exec_result, hc_exec_on
 
 MANIFEST = "runtimes.toml"  # 仓根环境需求清单(仓 agent 自定)
 
@@ -25,7 +28,7 @@ TEMPLATE = """# runtimes.toml - 本仓工作台环境需求(仓 agent 自定,本
 
 
 def _ark_bin(machine: str | None = None) -> str:
-    """ark 调用前缀:本机直跑 or 远端 ssh 包(节点经 machines 机册寻址)。"""
+    """ark 调用前缀:本机直跑 or 远端包(节点经机册寻址;远端恒 PATH 上的 ark)。"""
     b = os.environ.get("ARK_BIN")
     if b and os.path.isfile(b):
         return b
@@ -37,19 +40,21 @@ def _ark_bin(machine: str | None = None) -> str:
 
 
 def _machine_target(label: str) -> str:
+    """机册外节点的 ssh target(机册内节点不走此道)。"""
     for m in _machines_raw():
-        if m.get("label") == label:
+        if m.get("name") == label:
             return m.get("target") or label
     die("not_found", f"节点「{label}」不在机册(machines view 查)", rc=1)
 
 
 def _sh_quote(s: str) -> str:
-    """单引号包安全形(内单引号转义);ssh 远端命令串用。"""
-    return "'" + s.replace("'", "'\''") + "'"
+    """单引号包安全形(内单引号转义);远端命令串用。"""
+    return "'" + s.replace("'", "'\\''") + "'"
 
 
 def _ssh_run(target: str, argv: list[str], timeout: float, login: bool = False) -> subprocess.CompletedProcess:
-    # login 形:包 bash -lc 走 ~/.profile(~/.local/bin 等 PATH 增量;非交互 ssh 不吃 .bashrc)
+    """原 ssh 道(机册外节点专用;机册内走 hc exec --on):
+    login 形包 bash -lc 走 ~/.profile(~/.local/bin 等 PATH 增量;非交互 ssh 不吃 .bashrc)。"""
     cmd = 'bash -lc ' + _sh_quote(" ".join(argv)) if login else " ".join(argv)
     full = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", target, cmd]
     try:
@@ -59,11 +64,28 @@ def _ssh_run(target: str, argv: list[str], timeout: float, login: bool = False) 
         return subprocess.CompletedProcess(full, 124, "", f"op_timeout: ssh 超 {timeout:.0f}s")
 
 
+def _remote_run(label: str, argv: list[str], timeout: float, login: bool = False) -> subprocess.CompletedProcess:
+    """跨机单点(批5c):hc 机册节点 → hc exec --on;机册外 → 原 ssh 道不变。
+    login 形 = bash -lc 包裹(PATH 增量;hc exec 与 ssh 同吃)。"""
+    if label in _machine_labels():
+        # hc 机册节点:hc exec --on(ssh 手搓退役);login 形 bash -lc 保 PATH 增量
+        if login:
+            return exec_result(hc_exec_on(label, ["bash", "-lc", " ".join(argv)], timeout=int(timeout)))
+        return exec_result(hc_exec_on(label, argv, timeout=int(timeout)))
+    return _ssh_run(_machine_target(label), argv, timeout, login=login)
+
+
+def _remote_line(label: str, line: str, timeout: float) -> subprocess.CompletedProcess:
+    """跨机 shell 行单点:hc 机册节点 = bash -c 包(line 不经 shell 直跑);机册外 = ssh 原行。"""
+    if label in _machine_labels():
+        return exec_result(hc_exec_on(label, ["bash", "-c", line], timeout=int(timeout)))
+    return _ssh_run(_machine_target(label), [line], timeout)
+
+
 def _ark_run(args: list[str], timeout: float = 120, machine: str | None = None) -> subprocess.CompletedProcess:
     if machine:
         # 远端恒用 PATH 上的 ark(本地 win 路径不可执于远端;ARK_BIN 只管本机)
-        # login shell:ssh 非交互不吃 .bashrc,~/.local/bin 进不来
-        return _ssh_run(_machine_target(machine), ["ark", *args], timeout, login=True)
+        return _remote_run(machine, ["ark", *args], timeout, login=True)
     argv = [_ark_bin(), *args]
     try:
         return subprocess.run(argv, capture_output=True, text=True, timeout=timeout,
@@ -86,7 +108,7 @@ def _ark_status_map(machine: str | None = None) -> dict[str, dict]:
 
 
 def _parse_tools_block(text: str) -> dict[str, str]:
-    """清单 [tools] 解析,兼容两形(2026-10-17 实战形对齐):
+    """清单 [tools] 解析,兼容两形:
     平形:[tools] 段内 `名 = "版本"`;富形:`[tools.名]` 子表,取其 version 键
     (channel/purpose 等注记键忽略)。"""
     out: dict[str, str] = {}
@@ -116,14 +138,14 @@ def _parse_tools_block(text: str) -> dict[str, str]:
 
 
 def _load_manifest(machine: str | None = None, repo: str | None = None) -> dict[str, str]:
-    """仓根 runtimes.toml -> {工具: 版本约束};远端形经 ssh cat(--repo 指远端仓路径)。"""
+    """仓根 runtimes.toml -> {工具: 版本约束};远端形经跨机道 cat(--repo 指远端仓路径)。"""
     if machine:
         rp = repo or "~"
         # 本地 ~ 被调用方 shell 展开成本机家目录时,归一回远端家(bash 未加引号常见坑)
         lh = os.path.expanduser("~").replace("\\", "/")
         if lh and rp.startswith(lh):
             rp = "~" + rp[len(lh):]
-        r = _ssh_run(_machine_target(machine), ["cat " + rp + "/" + MANIFEST + " 2>/dev/null"], 20)
+        r = _remote_line(machine, f"cat {rp}/{MANIFEST} 2>/dev/null", 20)
         if r.returncode != 0 or not r.stdout.strip():
             return {}
         return _parse_tools_block(r.stdout)
@@ -180,17 +202,17 @@ def _flag_value(flag: str):
 
 
 def _config_check(machine: str | None = None) -> dict:
-    """agent 配置面只读检查:CLI 配置目录在位 + 网关 env(远端经 ssh test)。"""
+    """agent 配置面只读检查:CLI 配置目录在位 + 网关 env(远端经跨机道 test)。"""
     checks = {
         "claude-config": "~/.claude",
         "codex-config": "~/.codex",
-        "herdr-config": "~/.config/herdr",
+        "hc-config": "~/.config/herdr-core",
         "gateway-env": "$ANTHROPIC_BASE_URL",
     }
     items = {}
     for k, p in checks.items():
         if machine:
-            r = _ssh_run(_machine_target(machine), [f"test -e {p} && echo y || echo n"], 15)
+            r = _remote_line(machine, f"test -e {p} && echo y || echo n", 15)
             items[k] = (r.stdout or "").strip().endswith("y")
         else:
             items[k] = os.path.exists(os.path.expanduser(p))
