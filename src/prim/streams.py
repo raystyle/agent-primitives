@@ -36,6 +36,10 @@ def _file_slice(pos: list[str]) -> tuple[str, str]:
     return note, rest
 
 
+def _retired_rooms(pos: list[str], g: dict):
+    die("usage", "动词「rooms」已退役(ADR-0003 重构+动词标准统一 2026-11-16);清单即裸 view(streams view = 房间清单)", rc=2)
+
+
 def _rooms(pos: list[str], g: dict):
     rooms: dict = {}
     dm_count = 0
@@ -56,6 +60,10 @@ def _rooms(pos: list[str], g: dict):
 
 
 def _view(pos: list[str], g: dict):
+    # 裸 view = 房间清单(用户裁定 2026-11-16:与 agents/desks/machines 的 view 对齐;rooms 退役)
+    plain = [p0 for p0 in pos if not p0.startswith("-")]
+    if not plain and "--from" not in pos and "--resume" not in pos:
+        return _rooms(pos, g)
     if "-f" in pos or "--follow" in pos:
         stream = next((p0 for p0 in pos if not p0.startswith("-")), "")
         if not stream:
@@ -162,13 +170,7 @@ def _room_dm_rewrite(verb: str, pos: list[str]) -> tuple[str, list[str]]:
     return verb, pos
 
 
-def _task(pos: list[str], g: dict):
-    # tasks 并入(CONTRACT-v2:任务即流,`streams task view|set|to`)
-    from .tasks import task_main
-    return task_main(pos, g)
-
-
-VERBS = {"rooms": _rooms, "view": _view, "append": _append, "task": _task,
+VERBS = {"rooms": _retired_rooms, "view": _view, "append": _append,
          "to": lambda pos, g: run_to("streams", pos, _TO)}
 
 
@@ -178,5 +180,5 @@ def streams_main():
     verb, pos = _room_dm_rewrite(verb, pos)
     handler = VERBS.get(verb)
     if handler is None:
-        die("usage", f"未知动词「{verb}」(rooms/room/dm/view/append/to/task);--llms 看手册", rc=2)
+        die("usage", f"未知动词「{verb}」(room/dm/view/append/to);--llms 看手册", rc=2)
     handler(pos, g)

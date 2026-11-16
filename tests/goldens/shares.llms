@@ -1,0 +1,8 @@
+shares@5.0.0 - 文件域:交付或取回一份已写完的文件(六入口复活 2026-11-16;carry 合并入口退役)
+动词:view(本机搬运面清点);put <path>(推送上桌,回 share key)/ get <key> [到目录](取回落盘);
+  to <id> <key>(留痕加知会:入流 + agents to 一发)
+示例:
+  shares put report.md
+  shares get 3fa9 report/ 到当前目录
+  shares to node-a-claude-1 3fa9 交付评审
+退役注记:carry 域退役(2026-11-16 裁定:三合一入口不要,shares 直入);pipes(实时字节)与 ports(端口映射)随 carry 退役

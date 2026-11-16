@@ -1,15 +1,13 @@
-streams@5.0.0 - 流域:S2 持久流(引擎 s5;room 即房间)+ tasks 子面(任务即流)
-动词:rooms(列房间);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
+streams@5.0.0 - 流域:增量消息(S2 持久流,引擎 s5;room 即房间)
+动词:view(裸调用 = 房间清单;带流名 = 读流,-f 活跟随);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
   dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
-  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force];
-  task view [host](实时任务面)/ task set <id> <文本>(只写不扰,绕门控)/ task to <id> <文本>(设+知会)
+  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
 示例:
-  streams rooms
+  streams view
   streams room fleet
   streams room gateway-logging 四方合研-新证据入档
   streams room gateway-logging 日志请看 --file app.log --lines 50-62
   streams dm node-b-agent-1 私信验证
   cat build.log | streams append room/build
   streams to node-a fleet 回执-批X完成
-  streams task view;streams task set node-a-claude-1 评审后发版
-退役注记:tasks 独立入口已并入本面(`streams task ...`;CONTRACT-v2 任务即流)
+退役注记:tasks 子面已退役(2026-11-16:streams 只做增量消息);rooms 已并入裸 view(命名与 agents view 对齐)

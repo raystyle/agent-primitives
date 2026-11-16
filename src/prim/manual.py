@@ -64,21 +64,27 @@ id:裸名 | 机:名或格 | local:格;示例:desks view;desks close local:t1r"""
   machines add user@192.0.2.20 --name node-a --install
   machines reconnect node-a
 """,
-        "streams": f"""streams@{_pkg_ver()} - 流域:S2 持久流(引擎 s5;room 即房间)+ tasks 子面(任务即流)
-动词:rooms(列房间);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
-  dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
-  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force];
-  task view [host](实时任务面)/ task set <id> <文本>(只写不扰,绕门控)/ task to <id> <文本>(设+知会)
+        "shares": f"""shares@{_pkg_ver()} - 文件域:交付或取回一份已写完的文件(六入口复活 2026-11-16;carry 合并入口退役)
+动词:view(本机搬运面清点);put <path>(推送上桌,回 share key)/ get <key> [到目录](取回落盘);
+  to <id> <key>(留痕加知会:入流 + agents to 一发)
 示例:
-  streams rooms
+  shares put report.md
+  shares get 3fa9 report/ 到当前目录
+  shares to node-a-claude-1 3fa9 交付评审
+退役注记:carry 域退役(2026-11-16 裁定:三合一入口不要,shares 直入);pipes(实时字节)与 ports(端口映射)随 carry 退役""",
+        "streams": f"""streams@{_pkg_ver()} - 流域:增量消息(S2 持久流,引擎 s5;room 即房间)
+动词:view(裸调用 = 房间清单;带流名 = 读流,-f 活跟随);room <room>(read room,-f 活跟随)/ room <room> <消息> [--file <文件> [--lines N:M]](speak room或传日志切片);
+  dm <对方别名> <消息> [--file <文件> [--lines N:M]](DM lane,流名按双别名排序自动定);
+  view [流名] [--from <seq>|--resume] [-n N] [-f](活跟随,Ctrl+C 退 130);append <流> <消息>(或 stdin 管道:cat x | streams append <流>,不加 host 前缀);to <id> <流> <消息> [--force]
+示例:
+  streams view
   streams room fleet
   streams room gateway-logging 四方合研-新证据入档
   streams room gateway-logging 日志请看 --file app.log --lines 50-62
   streams dm node-b-agent-1 私信验证
   cat build.log | streams append room/build
   streams to node-a fleet 回执-批X完成
-  streams task view;streams task set node-a-claude-1 评审后发版
-退役注记:tasks 独立入口已并入本面(`streams task ...`;CONTRACT-v2 任务即流)""",
+退役注记:tasks 子面已退役(2026-11-16:streams 只做增量消息);rooms 已并入裸 view(命名与 agents view 对齐)""",
         "carry": f"""carry@{_pkg_ver()} - 搬运域:同构三合一(shares 文件 + pipes 管道 + ports 端口;CONTRACT-v2 新入口)
 裸形(智能分派):put <文件>;get <键> [-o 名];open [spec](无参 = 管道,带 spec = 端口映射);
   close <地址或pid>(双域联合寻址,唯一命中即关);send <addr>(连对方管道发,stdin 直通);
@@ -96,8 +102,8 @@ id:裸名 | 机:名或格 | local:格;示例:desks view;desks close local:t1r"""
   carry ports to node-a 8123
 退役注记:shares/pipes/ports 独立入口并入本面(域内动词面不变)""",
         "ctxs": f"""ctxs@{_pkg_ver()} - 对话历史域:agent 请求全链检索(引擎 ClickHouse gw_logs;与 agents read 分工:read=实时屏,ctxs=历史档案)
-动词:view [agent] [--limit N] [--since <ts>] [--before <ts>](最近请求头行:时间/模型/token/耗时/request_id;时间窗直裁分区,翻页找目标日用);
-  show <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块,命中块为命中点居中 3000 字);
+动词:view [agent] [--limit N] [--since <ts>] [--before <ts>](最近请求头行:时间/模型/token/耗时/request_id;时间窗直裁分区);
+  view <request_id> [--around <词>] [--window N](全链;--around 只出命中块±N 邻块;show 已并入 2026-11-16);
   search <词> [--term <词>]... [--limit N] [--days N](跨请求全文,多词 OR;每行带命中片段 snip;--days 扫描窗缺省 1 天) [--since <ts>] [--before <ts>](精确窗覆盖 --days)
 窗口:head 365 天,gwlog 正文 180 天;词至少 2 字符(UTF-8 计)
 退役注记:mcps 域整域退役(ADR-0001 MCP 边缘化,用户裁定 2026-11-13;连通用 MCP 客户端腿也不留)

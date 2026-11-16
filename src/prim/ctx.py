@@ -116,7 +116,14 @@ def _pval(pos: list[str], flag: str, default: str = "") -> str:
     return default
 
 
+def _retired_show(pos, g):
+    _die("usage", "动词「show」已退役(ADR-0003 重构+动词标准统一 2026-11-16);详情即 view <request_id> 全链", "ctxs view <id>", rc=2)
+
+
 def _view(pos: list[str], g: dict):
+        # 详情并法(动词标准统一 2026-11-16):首参带 --around/--window 或形如 request_id(含-) → 原 show 语义
+        if pos and not pos[0].startswith("-") and ("--around" in pos or "--window" in pos or "-" in pos[0]):
+            return _show_detail(pos)
         agent = pos[0] if pos and not pos[0].startswith("-") else ""
         limit = _pval(pos, "--limit", "20")
         conds = [f"agent = '{_esc(agent)}'"] if agent else []
@@ -133,7 +140,7 @@ def _view(pos: list[str], g: dict):
                f"FROM gw_logs.head {where} ORDER BY ts DESC LIMIT {limit} FORMAT TSVWithNames")
         print(_ch(sql))
 
-def _show(pos: list[str], g: dict):
+def _show_detail(pos: list[str], g: dict):
         if not pos:
             _die("usage", "show <request_id> [--around <关键词>] [--window N]", "ctx view 找 request_id", rc=2)
         rid = _esc(pos[0])
@@ -269,7 +276,7 @@ def _search(pos: list[str], g: dict):
         out = "\n".join(lines_out)
         print(out if len(out.strip().splitlines()) > 1 else "(无命中;块表 180 天窗口)")
 
-VERBS: dict = {"view": _view, "show": _show, "search": _search}
+VERBS: dict = {"view": _view, "show": _retired_show, "search": _search}
 
 
 def ctxs_main():

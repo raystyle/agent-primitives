@@ -97,12 +97,14 @@ def _runtime(pos: list[str], g: dict):
 
 
 VERBS: dict = {
-    "view": _view, "list": _view,
+    "view": _view,
     "add": _add, "reconnect": _reconnect,
     "run": _run, "close": _close,
-    "runtime": _runtime, "runtimes": _runtime,
+    "runtime": _runtime,
     # ---- 退役可见化(命运表;stub 不删,help/CTA 指新道) ----
     "status": _retired("status", "状态面并入 machines view(hc machine ls 的 state 字段)"),
+    "list": _retired("list", "清单即 view(动词标准统一 2026-11-16)"),
+    "runtimes": _retired("runtimes", "复数别名删,单数 runtime(动词标准统一 2026-11-16)"),
     "rename": _retired("rename", "直令 hc machine rename <机> <新名>"),
     "remove": _retired("remove", "直令 hc machine rm <机>"),
     "enable": _retired("enable", "三台常驻机册裁定(ADR-0003):hc 机册无启停态,需求再现做本地标记"),

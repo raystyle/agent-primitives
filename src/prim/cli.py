@@ -20,7 +20,7 @@ import importlib
 
 from .agents import agents_main  # noqa: F401  (已 guard 包裹)
 from .agents_view import desk_main  # noqa: F401,E402  (已 guard 包裹)
-from .carry import carry_main  # noqa: F401  (已 guard 包裹)
+from .shares import shares_main  # noqa: F401  (已 guard 包裹;carry 域退役 2026-11-16,shares 直入六入口)
 from .flags import parse, setup, handle_globals, _val  # noqa: F401  (旧名续命)
 from .manual import manual, _pkg_ver  # noqa: F401
 from .runtime_ctx import eprint, guard

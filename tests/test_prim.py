@@ -26,9 +26,9 @@ from prim import cli, core, msg, runtime_ctx  # noqa: E402
 GOLDENS = Path(__file__).parent / "goldens"
 ARCHIVE = GOLDENS / "archive-v1"
 # 批5c:六入口(CONTRACT-v2 方案甲;desk 别名删,mcps 删域,tasks 并入 streams)
-ENTRIES = ("agents", "desks", "machines", "streams", "carry", "ctxs")
+ENTRIES = ("agents", "desks", "machines", "streams", "shares", "ctxs")
 MAIN_ATTR = {"agents": "agents_main", "desks": "desk_main", "machines": "machines_main",
-             "streams": "streams_main", "carry": "carry_main", "ctxs": "ctxs_main"}
+             "streams": "streams_main", "shares": "shares_main", "ctxs": "ctxs_main"}
 
 
 def run_llms(entry: str) -> str:
@@ -98,16 +98,21 @@ def test_llms_golden_sanitized(entry):
 
 RETIRED = {
     "agents": ("list", "machines", "sync", "split", "tab", "zoom", "wt"),
-    "machines": ("status", "rename", "remove", "enable", "disable", "pane"),
+    "machines": ("status", "rename", "remove", "enable", "disable", "pane", "list", "runtimes"),
+    "streams": ("rooms",),
+    "ctxs": ("show",),
 }
 
 
 @pytest.mark.parametrize("face", sorted(RETIRED))
 def test_retired_verbs_die_with_pointer(face, monkeypatch, capsys):
-    """17 退役动词:调用即 usage 退 2,错误面带「已退役」与新道指路。"""
+    """退役动词:调用即 usage 退 2,错误面带「已退役」与新道指路(废弃可见化)。"""
     import prim.agents as agents_mod
     import prim.machines as machines_mod
-    reg = agents_mod.VERBS if face == "agents" else machines_mod.VERBS
+    import prim.streams as streams_mod
+    import prim.ctx as ctx_mod
+    reg = {"agents": agents_mod.VERBS, "machines": machines_mod.VERBS,
+           "streams": streams_mod.VERBS, "ctxs": ctx_mod.VERBS}[face]
     monkeypatch.setattr(runtime_ctx, "JSON_MODE", True)
     monkeypatch.setattr(runtime_ctx, "CMD_NAME", face)
     for verb in RETIRED[face]:
@@ -125,7 +130,7 @@ def test_retired_verbs_die_with_pointer(face, monkeypatch, capsys):
 def test_retired_visible_in_manual(entry):
     """各入口 --llms 手册面含退役可见化段(本面有退役动词的入口)。"""
     text = run_llms(entry)
-    if entry in RETIRED or entry in ("streams", "carry", "ctxs"):
+    if entry in RETIRED or entry in ("streams", "shares", "ctxs"):
         assert "退役" in text, f"{entry} 手册面缺退役可见化段"
 
 
@@ -208,8 +213,8 @@ def test_manual_dict_covers_all_command_faces():
 
 
 def test_manual_has_no_retired_entry_faces():
-    """删域证据:mcps/tasks/shares/pipes/ports 独立手册面不再提供。"""
-    for gone in ("mcps", "tasks", "shares", "pipes", "ports"):
+    """删域证据:mcps/tasks/pipes/ports 独立手册面不再提供(shares 复活为六入口 2026-11-16)。"""
+    for gone in ("mcps", "tasks", "pipes", "ports"):
         assert not cli.manual(gone).strip(), f"manual({gone!r}) 应为空(域已退役/并入)"
 
 
@@ -273,15 +278,15 @@ def test_domain_verb_registries():
                                      "mode", "start", "close", "reload", "trust", "yolo",
                                      "run", "shell", "dev", "keys",
                                      "list", "machines", "sync", "split", "tab", "zoom", "wt"}
-    assert set(machines_mod.VERBS) == {"view", "list", "add", "reconnect", "run", "close",
-                                       "runtime", "runtimes",
-                                       "status", "rename", "remove", "enable", "disable", "pane"}
-    assert set(streams_mod.VERBS) == {"rooms", "view", "append", "task", "to"}
+    assert set(machines_mod.VERBS) == {"view", "add", "reconnect", "run", "close", "runtime",
+                                       "status", "rename", "remove", "enable", "disable", "pane",
+                                       "list", "runtimes"}  # list/runtimes 退役 stub(2026-11-16 动词标准)
+    assert set(streams_mod.VERBS) == {"rooms", "view", "append", "to"}  # rooms 退役 stub(裸 view=房间清单)
     assert set(tasks_mod.VERBS) == {"view", "set", "to"}  # streams task 子面复用
     assert set(shares_mod.VERBS) == {"view", "put", "get", "to"}
     assert set(pipes_mod.VERBS) == {"view", "open", "close", "send", "to"}
     assert set(ports_mod.VERBS) == {"view", "open", "close", "fwd", "to"}
-    assert set(ctx_mod.VERBS) == {"view", "show", "search"}
+    assert set(ctx_mod.VERBS) == {"view", "show", "search"}  # show 退役 stub(view 带 id=详情)
 
 
 def test_mcps_domain_gone():

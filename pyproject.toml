@@ -1,7 +1,7 @@
 [project]
 name = "prim"
 version = "5.0.0"
-description = "原语 CLI(herdr-ccoe 批5c CONTRACT-v2 重构形):六入口 agents/desks/machines/streams/carry/ctxs + 共享叶子(uv python 跨系统形;ADR-0003 放开重构,入口甲案 11→6,tasks 并入 streams,shares/pipes/ports 合成 carry,mcps 删域)"
+description = "原语 CLI(herdr-ccoe 批5c CONTRACT-v2 重构形):六入口 agents/desks/machines/streams/shares/ctxs + 共享叶子(uv python 跨系统形;ADR-0003 放开重构,入口甲案 11→6,tasks 退役(streams 只做增量消息),carry 弃用 shares 直入,mcps 删域)"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
 
@@ -10,7 +10,7 @@ agents = "prim.cli:agents_main"
 desks = "prim.cli:desk_main"
 machines = "prim.cli:machines_main"
 streams = "prim.cli:streams_main"
-carry = "prim.cli:carry_main"
+shares = "prim.cli:shares_main"
 ctxs = "prim.cli:ctxs_main"
 
 [build-system]
