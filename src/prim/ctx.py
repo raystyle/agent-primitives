@@ -123,7 +123,7 @@ def _retired_show(pos, g):
 def _view(pos: list[str], g: dict):
         # 详情并法(动词标准统一 2026-11-16):首参带 --around/--window 或形如 request_id(含-) → 原 show 语义
         if pos and not pos[0].startswith("-") and ("--around" in pos or "--window" in pos or "-" in pos[0]):
-            return _show_detail(pos)
+            return _show_detail(pos, g)
         agent = pos[0] if pos and not pos[0].startswith("-") else ""
         limit = _pval(pos, "--limit", "20")
         conds = [f"agent = '{_esc(agent)}'"] if agent else []
