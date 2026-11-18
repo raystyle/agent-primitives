@@ -83,13 +83,13 @@ _TO = ToSpec(
     fail_msg=lambda c, st: f"shares: 投递 {st}({c['m']}:{c['pane']})key={c['key']}",
 )
 
-VERBS = {"view": _view, "put": _put, "get": _get,
-         "to": lambda pos, g: run_to("shares", pos, _TO)}
+VERBS = {"ls": _view, "put": _put, "get": _get,  # hc 动词对齐:view→ls(清单恒 ls)
+         "send": lambda pos, g: run_to("shares", pos, _TO)}
 
 
 def shares_main():
     g, verb, pos = flags.bootstrap("shares", manual("shares"))
-    verb = verb or "view"
+    verb = verb or "ls"
     handler = VERBS.get(verb)
     if handler is None:
         die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)

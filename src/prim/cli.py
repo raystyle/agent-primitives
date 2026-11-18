@@ -1,16 +1,17 @@
-"""prim CLI 装配层(批5c CONTRACT-v2 重构):六入口 + 惰性域路由
+"""prim CLI 装配层(2026-11-18 五入口收敛,用户裁):shares / streams / ctxs / ports / pipes
 
-CONTRACT-v2(ADR-0003 方案甲,入口 11 → 6):agents / desks / machines / streams /
-carry / ctxs。tasks 并入 streams 子面(task view|set|to);shares/pipes/ports 合成
-carry;mcps 整域退役(ADR-0001 MCP 边缘化,用户裁定 2026-11-13);desk 单字别名删。
+收敛判据:agents/desks/machines 三域退役——消息与工位归 hc 原生面(hc --skill:
+run/ls/get/read/send/wait/put),机册归 hc machine,拓扑归 herdr-app;prim 只留
+hc 没有的五个域(文件共享/持久流/对话历史/端口映射/实时字节管道)。
+动词对齐 hc:清单 ls、读写 get/put、消息 send、生命周期 start/close
+(pipes/ports 的 open→start 更名;view→ls 更名;to→send 更名)。
 
 实现分布(依赖恒单向 cli -> 域模块 -> 共享叶子 -> runtime_ctx):
-- agents 域:agents.py(VERBS 注册表)+ agents_events/agents_lifecycle/agents_topo/agents_view
-- desks 域:agents_view.desk_main(view/start/close 拓扑兜底,退役动词 stub)
-- machines 域:machines.py(hc machine 直通)+ runtimes(ark 子面)
-- streams 域:streams.py(s5 持久流)+ tasks(子面 task view|set|to)
-- carry 域:carry.py(形壳)→ shares/pipes/ports 三模块(域实现单源)
-- ctxs 域:ctx(ClickHouse 检索)
+- shares 域:shares.py(view/put/get/to)
+- streams 域:streams.py(rooms 退役 stub/view/append/to)
+- ctxs 域:ctx(view/show 退役 stub/search)
+- ports 域:ports.py(view/open/close/fwd/to)
+- pipes 域:pipes.py(view/open/close/send/to)
 - 共享叶子:runtime_ctx(态与信封)/engines(hc+s5)/identity/addressing/gating/flags/manual/deliver/tailcat_base/msg
 
 文法(CONTRACT 五d):<命令> [全局旗标] <动词> [动词旗标] [位置参数]
@@ -18,14 +19,12 @@ carry;mcps 整域退役(ADR-0001 MCP 边缘化,用户裁定 2026-11-13);desk 单
 from __future__ import annotations
 import importlib
 
-from .agents import agents_main  # noqa: F401  (已 guard 包裹)
-from .agents_view import desk_main  # noqa: F401,E402  (已 guard 包裹)
-from .shares import shares_main  # noqa: F401  (已 guard 包裹;carry 域退役 2026-11-16,shares 直入六入口)
+from .shares import shares_main  # noqa: F401  (guard 包裹)
 from .flags import parse, setup, handle_globals, _val  # noqa: F401  (旧名续命)
 from .manual import manual, _pkg_ver  # noqa: F401
 from .runtime_ctx import eprint, guard
 
-_LOADERS = {"ctxs": "ctx", "machines": "machines", "streams": "streams"}
+_LOADERS = {"ctxs": "ctx", "streams": "streams", "ports": "ports", "pipes": "pipes"}
 
 
 def _load(cmd: str):
@@ -36,4 +35,5 @@ def _load(cmd: str):
 
 streams_main = guard(_load("streams"))
 ctxs_main = guard(_load("ctxs"))
-machines_main = guard(_load("machines"))
+ports_main = guard(_load("ports"))
+pipes_main = guard(_load("pipes"))

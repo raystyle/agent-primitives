@@ -118,12 +118,13 @@ def _to(pos: list[str], g: dict):
     run_to("ports", pos, _TO)
 
 
-VERBS = {"view": _view, "open": _open, "close": _close, "fwd": _fwd, "to": _to}
+VERBS = {"ls": _view, "start": _open, "close": _close, "fwd": _fwd,  # open→start(hc 生命周期)
+         "send": _to}  # to→send:五域消息动词统一
 
 
 def ports_main():
     g, verb, pos = flags.bootstrap("ports", manual("ports"))
-    verb = verb or "view"
+    verb = verb or "ls"
     handler = VERBS.get(verb)
     if handler is None:
         die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)

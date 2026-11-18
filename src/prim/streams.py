@@ -170,13 +170,13 @@ def _room_dm_rewrite(verb: str, pos: list[str]) -> tuple[str, list[str]]:
     return verb, pos
 
 
-VERBS = {"rooms": _retired_rooms, "view": _view, "append": _append,
-         "to": lambda pos, g: run_to("streams", pos, _TO)}
+VERBS = {"rooms": _retired_rooms, "ls": _view, "append": _append,  # view→ls(hc)
+         "send": lambda pos, g: run_to("streams", pos, _TO)}
 
 
 def streams_main():
     g, verb, pos = flags.bootstrap("streams", manual("streams"))
-    verb = verb or "view"
+    verb = verb or "ls"
     verb, pos = _room_dm_rewrite(verb, pos)
     handler = VERBS.get(verb)
     if handler is None:

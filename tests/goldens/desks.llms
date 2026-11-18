@@ -1,7 +1,0 @@
-desks@5.0.0 - 工位拓扑兜底(view/start/close 三动词;树形主力 = herdr-app mod GUI)
-术语:工位/窗格 = pane;工作台/窗台 = workspace(hc where 字段线)
-view [host](全量工位表:机/格/类/态/活动;裸调用同;--json 出行形)
-start <名> --kind <类> [--cwd DIR] [--machine 机];close <id>(优雅退)
-已退役(ADR-0003 重构;调用回 usage 指新道):split / tab / zoom / wt(拓扑归 mod GUI);
-  desk 单字别名删除(消费方可断裁定);shell/dev/ws/yolo/trust/reload 走 agents 面
-id:裸名 | 机:名或格 | local:格;示例:desks view;desks close local:t1r

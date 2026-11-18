@@ -26,9 +26,9 @@ from prim import cli, core, msg, runtime_ctx  # noqa: E402
 GOLDENS = Path(__file__).parent / "goldens"
 ARCHIVE = GOLDENS / "archive-v1"
 # 批5c:六入口(CONTRACT-v2 方案甲;desk 别名删,mcps 删域,tasks 并入 streams)
-ENTRIES = ("agents", "desks", "machines", "streams", "shares", "ctxs")
-MAIN_ATTR = {"agents": "agents_main", "desks": "desk_main", "machines": "machines_main",
-             "streams": "streams_main", "shares": "shares_main", "ctxs": "ctxs_main"}
+ENTRIES = ("shares", "streams", "ctxs", "ports", "pipes")  # 五入口收敛 2026-11-18(agents/desks/machines 退役)
+MAIN_ATTR = {"shares": "shares_main", "streams": "streams_main", "ctxs": "ctxs_main",
+             "ports": "ports_main", "pipes": "pipes_main"}
 
 
 def run_llms(entry: str) -> str:
@@ -213,9 +213,12 @@ def test_manual_dict_covers_all_command_faces():
 
 
 def test_manual_has_no_retired_entry_faces():
-    """删域证据:mcps/tasks/pipes/ports 独立手册面不再提供(shares 复活为六入口 2026-11-16)。"""
-    for gone in ("mcps", "tasks", "pipes", "ports"):
+    """删域证据(五入口收敛 2026-11-18):agents/desks/machines/carry/mcps/tasks 手册面为空;
+    五入口(shares/streams/ctxs/ports/pipes)手册必须非空。"""
+    for gone in ("agents", "desks", "machines", "carry", "mcps", "tasks"):
         assert not cli.manual(gone).strip(), f"manual({gone!r}) 应为空(域已退役/并入)"
+    for live in ENTRIES:
+        assert cli.manual(live).strip(), f"manual({live!r}) 不应为空(五入口)"
 
 
 # ---------- msg 信封(六节模板契约) ----------
@@ -273,20 +276,13 @@ from prim import machines as machines_mod  # noqa: E402
 
 
 def test_domain_verb_registries():
-    """CONTRACT-v2 动词面:退役动词 stub 在册(废弃可见化);live 动词全保。"""
-    assert set(agents_mod.VERBS) == {"view", "workbenches", "read", "to", "wait", "inbox",
-                                     "mode", "start", "close", "reload", "trust", "yolo",
-                                     "run", "shell", "dev", "keys",
-                                     "list", "machines", "sync", "split", "tab", "zoom", "wt"}
-    assert set(machines_mod.VERBS) == {"view", "add", "reconnect", "run", "close", "runtime",
-                                       "status", "rename", "remove", "enable", "disable", "pane",
-                                       "list", "runtimes"}  # list/runtimes 退役 stub(2026-11-16 动词标准)
-    assert set(streams_mod.VERBS) == {"rooms", "view", "append", "to"}  # rooms 退役 stub(裸 view=房间清单)
-    assert set(tasks_mod.VERBS) == {"view", "set", "to"}  # streams task 子面复用
-    assert set(shares_mod.VERBS) == {"view", "put", "get", "to"}
-    assert set(pipes_mod.VERBS) == {"view", "open", "close", "send", "to"}
-    assert set(ports_mod.VERBS) == {"view", "open", "close", "fwd", "to"}
-    assert set(ctx_mod.VERBS) == {"view", "show", "search"}  # show 退役 stub(view 带 id=详情)
+    """五入口动词面(2026-11-18 收敛):view→ls、to→send、open→start 对齐 hc;
+    旧名(view/to/open)不留别名——动词形态五域统一,漂移在源头拦。"""
+    assert set(streams_mod.VERBS) == {"rooms", "ls", "append", "send"}  # rooms 退役 stub(裸 ls=房间清单)
+    assert set(shares_mod.VERBS) == {"ls", "put", "get", "send"}
+    assert set(pipes_mod.VERBS) == {"ls", "start", "close", "send"}
+    assert set(ports_mod.VERBS) == {"ls", "start", "close", "fwd", "send"}
+    assert set(ctx_mod.VERBS) == {"ls", "show", "search"}  # show 退役 stub(ls 带 id=详情)
 
 
 def test_mcps_domain_gone():
@@ -346,7 +342,7 @@ def _wire_deliver(monkeypatch, *, gate_v=None, status="delivered"):
 def test_deliver_matrix_shares_delivered(monkeypatch, capsys):
     _wire_deliver(monkeypatch)
     monkeypatch.setattr(shares_mod, "shares_put", lambda fp: "share/node-a/abc/report.md")
-    shares_mod.VERBS["to"](["peer-claude-1", "report.md"], {})
+    shares_mod.VERBS["send"](["peer-claude-1", "report.md"], {})
     lines = [l for l in capsys.readouterr().out.splitlines() if l.startswith("{")]
     obj = json.loads(lines[-1])
     assert list(obj["data"]) == ["status", "target", "key", "name"], "shares ok 载荷键序 = 契约"
@@ -358,7 +354,7 @@ def test_deliver_matrix_shares_deferred_keeps_upload(monkeypatch, capsys):
     rec = _wire_deliver(monkeypatch, gate_v="dialog(Trust)")
     monkeypatch.setattr(shares_mod, "shares_put", lambda fp: "share/node-a/abc/report.md")
     with pytest.raises(SystemExit) as ei:
-        shares_mod.VERBS["to"](["peer-claude-1", "report.md"], {})
+        shares_mod.VERBS["send"](["peer-claude-1", "report.md"], {})
     assert ei.value.code == 1
     out = capsys.readouterr()
     obj = json.loads(out.out.strip())
@@ -372,7 +368,7 @@ def test_deliver_matrix_streams_deferred_does_not_append(monkeypatch, capsys):
     rec = _wire_deliver(monkeypatch, gate_v="dialog(Trust)")
     monkeypatch.setattr(streams_mod, "s5_append", lambda s, b: rec["append"](s, b) or True)
     with pytest.raises(SystemExit) as ei:
-        streams_mod.VERBS["to"](["peer-claude-1", "room/x", "hi"], {})
+        streams_mod.VERBS["send"](["peer-claude-1", "room/x", "hi"], {})
     assert ei.value.code == 1
     streams_hit = [c for c in rec["append"].calls if c[0][0] == "room/x"]
     assert not streams_hit, "拒投时消息不得先入流"
@@ -385,7 +381,7 @@ def test_deliver_matrix_streams_engine_fail_exits(monkeypatch, capsys):
     _wire_deliver(monkeypatch, status="engine_fail")
     monkeypatch.setattr(streams_mod, "s5_append", lambda s, b: True)
     with pytest.raises(SystemExit) as ei:
-        streams_mod.VERBS["to"](["peer-claude-1", "room/x", "hi"], {})
+        streams_mod.VERBS["send"](["peer-claude-1", "room/x", "hi"], {})
     assert ei.value.code == 1
     obj = json.loads(capsys.readouterr().out.strip())
     assert obj["data"]["status"] == "engine_fail"
@@ -422,18 +418,10 @@ def test_deliver_matrix_tasks_set_bypasses_gate(monkeypatch, capsys):
     assert rec.calls and rec.calls[0][0][2] == "评审后发版"
 
 
-def test_deliver_matrix_pipes_deferred_keeps_listener(monkeypatch, capsys):
-    """pipes 拒投也先开听:addr 必在 deferred 载荷。"""
-    import prim.tailcat_base as tb
-    _wire_deliver(monkeypatch, gate_v="dialog(Trust)")
-    monkeypatch.setattr(pipes_mod, "tb", tb)
-    monkeypatch.setattr(tb, "open_listener", lambda d, spec=None: (4242, "tcADDR"))
-    monkeypatch.setattr(tb, "fw_cta", lambda: None)
-    with pytest.raises(SystemExit) as ei:
-        pipes_mod.VERBS["to"](["peer-claude-1"], {})
-    assert ei.value.code == 1
-    obj = json.loads(capsys.readouterr().out.strip())
-    assert obj["data"]["addr"] == "tcADDR"
+def test_deliver_matrix_pipes_send_is_byte_write():
+    """pipes send=字节写(五域动词统一 2026-11-18):留痕知会道归 streams,VERBS 无 to。"""
+    assert "to" not in pipes_mod.VERBS
+    assert callable(pipes_mod.VERBS["send"])  # 字节写道健在
 
 
 def test_deliver_matrix_ports_delivered_payload_order(monkeypatch, capsys):
@@ -441,7 +429,7 @@ def test_deliver_matrix_ports_delivered_payload_order(monkeypatch, capsys):
     _wire_deliver(monkeypatch)
     monkeypatch.setattr(tb, "open_listener", lambda d, spec=None: (4242, "tcADDR"))
     monkeypatch.setattr(tb, "fw_cta", lambda: None)
-    ports_mod.VERBS["to"](["peer-claude-1", "8123", "8443"], {})
+    ports_mod.VERBS["send"](["peer-claude-1", "8123", "8443"], {})
     lines = [l for l in capsys.readouterr().out.splitlines() if l.startswith("{")]
     obj = json.loads(lines[-1])
     assert list(obj["data"]) == ["status", "target", "addr", "spec", "pid"], "ports ok 载荷键序 = 契约"
@@ -451,19 +439,17 @@ def test_deliver_matrix_ports_delivered_payload_order(monkeypatch, capsys):
 # ---------- 批5c:手册漂移守卫(退役 stub = 白名单) ----------
 
 _REGISTRIES = {
-    "agents": agents_mod.VERBS,
-    "machines": machines_mod.VERBS,
+    "shares": shares_mod.VERBS,
     "streams": streams_mod.VERBS,
     "ctxs": ctx_mod.VERBS,
+    "ports": ports_mod.VERBS,
+    "pipes": pipes_mod.VERBS,
 }
 
 # 手册动词段里出现但不进注册表的词:streams 的 room/dm 是前置改写动词;carry 裸形智能分派
 _MANUAL_ONLY = {"streams": {"room", "dm"}}
 # 注册表在册但手册未文档化:退役 stub 各入口手册以「已退役」段汇总可见(不逐词罗列进动词段)
-_RETIRED_STUBS = {
-    "agents": {"list", "machines", "sync", "split", "tab", "zoom", "wt"},
-    "machines": {"status", "rename", "remove", "enable", "disable", "pane"},
-}
+_RETIRED_STUBS = {}  # 五入口收敛(2026-11-18):agents/desks/machines 域退役,无跨域退役 stub
 _WORD = re.compile(r"^[a-z][a-z0-9_-]{1,18}$")
 
 
@@ -513,11 +499,19 @@ def test_manual_verbs_present_in_registry(face):
             f"{face} 手册动词 {token} 不在注册表(手册宣称未实现 = 漂移)"
 
 
-def test_carry_manual_faces_documented():
-    """carry 手册:三子域显式道与裸形面都可见。"""
-    text = cli.manual("carry")
-    for w in ("shares", "pipes", "ports", "put", "get", "open", "close", "send", "fwd", "to"):
-        assert w in text, f"carry 手册缺 {w}"
+def test_five_entry_manuals_document_verbs():
+    """五入口手册:hc 对齐动词全可见(ls/put/get/send/start/close/fwd/search)。"""
+    must = {
+        "shares": ("ls", "put", "get", "send"),
+        "streams": ("ls", "append", "send"),
+        "ctxs": ("ls", "search"),
+        "ports": ("ls", "start", "close", "fwd", "send"),
+        "pipes": ("ls", "start", "close", "send"),
+    }
+    for face, verbs in must.items():
+        text = cli.manual(face)
+        for v in verbs:
+            assert v in text, f"{face} 手册缺动词 {v}"
 
 
 # ---------- 批5c:引擎置换守卫(源面 grep:herdr 直呼清零) ----------

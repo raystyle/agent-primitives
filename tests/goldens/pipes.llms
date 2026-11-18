@@ -1,0 +1,8 @@
+pipes@5.0.0 - 实时字节域:管道收发与转发(五入口直入 2026-11-18;动词对齐 hc,原 carry 域显式道)
+动词:ls [host](管道面清单);start(起收听管道,常驻至 close;原 open 更名);
+  close <地址或pid>(杀进程收档广播);send <addr>(连对方管道,stdin 直通)
+示例:
+  pipes ls
+  pipes start
+  cat x.log | pipes send tcADDR
+退役注记:carry 域退役(2026-11-16);pipes 直入五入口(2026-11-18)

@@ -276,14 +276,14 @@ def _search(pos: list[str], g: dict):
         out = "\n".join(lines_out)
         print(out if len(out.strip().splitlines()) > 1 else "(无命中;块表 180 天窗口)")
 
-VERBS: dict = {"view": _view, "show": _retired_show, "search": _search}
+VERBS: dict = {"ls": _view, "show": _retired_show, "search": _search}  # view→ls(hc)
 
 
 def ctxs_main():
     from . import flags
     from .manual import manual
     g, verb, pos = flags.bootstrap("ctxs", manual("ctxs"))
-    verb = verb or "view"
+    verb = verb or "ls"
     handler = VERBS.get(verb)
     if handler is None:
         _die("usage", f"未知动词「{verb}」;--llms 看手册", rc=2)
