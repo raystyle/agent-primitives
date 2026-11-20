@@ -1,16 +1,16 @@
 [project]
-name = "prim"
-version = "5.0.0"
-description = "原语 CLI(六入口收敛五入口,2026-11-18 用户裁):shares/streams/ctxs/ports/pipes;agents/desks/machines 退役(归 hc/herdr-app 原生面);动词对齐 hc(ls/get/put/send/start/close)"
+name = "agent-primitives"
+version = "5.1.0"
+description = "原语 CLI(五入口:files/streams/ctxs/ports/pipes;2026-11-20 裁定:包 prim→agent-primitives、命令 shares→files);agents/desks/machines 退役(归 hc/herdr-app 原生面);动词对齐 hc(ls/get/put/send/start/close)"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
 
 [project.scripts]
-shares = "prim.cli:shares_main"
-streams = "prim.cli:streams_main"
-ctxs = "prim.cli:ctxs_main"
-ports = "prim.cli:ports_main"
-pipes = "prim.cli:pipes_main"
+files = "agent_primitives.cli:files_main"
+streams = "agent_primitives.cli:streams_main"
+ctxs = "agent_primitives.cli:ctxs_main"
+ports = "agent_primitives.cli:ports_main"
+pipes = "agent_primitives.cli:pipes_main"
 
 [build-system]
 requires = ["hatchling"]
@@ -20,7 +20,7 @@ build-backend = "hatchling.build"
 dev = ["pytest>=8"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/prim"]
+packages = ["src/agent_primitives"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

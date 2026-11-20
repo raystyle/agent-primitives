@@ -1,8 +1,0 @@
-shares@5.0.0 - 文件域:交付或取回一份已写完的文件(五入口收敛 2026-11-18;动词对齐 hc)
-动词:ls(本机搬运面清点);put <path>(推送上桌,回 share key)/ get <key> [到目录](取回落盘);
-  send <id> <key>(留痕加知会:入流 + hc send 一发;原 to 更名,动词五域统一)
-示例:
-  shares put report.md
-  shares get 3fa9 report/ 到当前目录
-  shares send node-a-claude-1 3fa9 交付评审
-退役注记:agents/desks/machines 三域退役(2026-11-18:归 hc 与 herdr-app 原生面);carry 域退役(2026-11-16)

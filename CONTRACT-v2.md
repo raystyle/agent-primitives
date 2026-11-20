@@ -4,7 +4,7 @@
 日期: 2026-11-13
 关联: docs/decisions/ADR-0003-prim-refactor.md、docs/product/prim-verb-fate.md、CONTRACT-v1.md(v1 原文归档;ai-ccoe 原仓见 git 历史)
 
-## 入口组织(方案甲:11 → 6)
+## 入口组织(五入口现役:2026-11-18 收敛 + 2026-11-20 shares→files;下表为 CONTRACT-v2 历史形态,六入口已收敛)
 
 | 入口 | 域 | 动词面 |
 |---|---|---|
@@ -34,4 +34,4 @@
 
 - 金样按 v2 再生(旧 79 用例面归档 `tests/goldens/archive-v1/` 为迁移证据);退役动词留废弃可见化断言(pytest 73 用例)
 - grep 守卫:prim/cli 源内无 `spawnSync('herdr'` / `runJson('herdr'` / `herdr_run(` 残留(pytest + vitest 双栈钉死)
-- evo skills 按新六入口重写(project-evo 侧工程,挂账)
+- skills 面按五入口重写(harness-plugins 市场仓工程,share/context 插件,2026-11-20 起;evo 时代挂账作废)
